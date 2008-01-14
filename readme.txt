@@ -51,6 +51,6 @@ On deactivation, __the events table is dropped__, so if you want to save your ev
 
 WPListCal is specialized to provide clean list or table based output for you to style or reparse any way you'd like.  Other calendar plugins force you to use a gregorian calendar view which may be inappropriate for many applications.
 
-= I love WPListCal, but I'd like it to do \_\_\_\_\_\_. =
+= I love WPListCal, but I'd like it to do &lt;blank&gt;. =
 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
