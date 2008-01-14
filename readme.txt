@@ -21,14 +21,21 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 1. Change the default settings on the WPListCal options page
 1. If you want to list your events on a page or post, insert the tag `<!--wplistcal-->` in the body of the page/post
 1. If you want to list your events somewhere in your theme files, insert `<?php echo wplc\_show\_events(); ?>`
-	> You can set special parameters to overwrite the default options if you use the PHP function call.
-	> All parameters are optional, but you must preserve the ordering by passing in `null` for options that you want to use defaults for.
-	> __Display Mode__ (string): `'list'` or `'table'`
-	> __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %START%, %END%, %DESCRIPTION%.
-	> __Date Format__ (string): The format to display the start and end date and time.  Uses [the same date formatting that Wordpress uses](http://codex.wordpress.org/Formatting_Date_and_Time).
-	> __Max. Events__ (int): The maximum number of events to display, -1 for unlimited.
-	> __Show Past Events__ (boolean): true to show all events, false to show only current and future events
-	> _Example:_ `<?php echo wplc\_show\_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false); ?>`
+    > You can set special parameters to overwrite the default options if you use the PHP function call.
+
+    > All parameters are optional, but you must preserve the ordering by passing in `null` for options that you want to use defaults for.
+
+    > __Display Mode__ (string): `'list'` or `'table'`
+
+    > __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %START%, %END%, %DESCRIPTION%.
+
+    > __Date Format__ (string): The format to display the start and end date and time.  Uses [the same date formatting that Wordpress uses](http://codex.wordpress.org/Formatting_Date_and_Time).
+
+    > __Max. Events__ (int): The maximum number of events to display, -1 for unlimited.
+
+    > __Show Past Events__ (boolean): true to show all events, false to show only current and future events
+
+    > _Example:_ `<?php echo wplc\_show\_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false); ?>`
 
 == Frequently Asked Questions ==
 
