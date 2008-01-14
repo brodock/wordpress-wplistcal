@@ -1,0 +1,49 @@
+=== WPListCal ===
+Contributors: jonkern
+Tags: calendar, events
+Requires at least: 2.0
+Tested up to: 2.3.2
+Stable tag: 1.0
+
+WPListCal allows you to list upcoming events on your blog in a list or table format.
+
+== Description ==
+
+WPListCal allows you to list upcoming events on your blog in a list or table format.  It plugs straight into the Wordpress admin pages to let you keep track of events just like posts and pages.  You can then list events on a page or post using a special tag, or incorporate events into your theme files using a PHP function call.
+
+== Installation ==
+
+1. Upload `wplistcal.php` to the `/wp-content/plugins/` directory
+1. Activate the plugin through the 'Plugins' menu in WordPress
+
+= Usage =
+
+1. Change the default settings on the WPListCal options page
+1. If you want to list your events on a page or post, insert the tag `<!--wplistcal-->` in the body of the page/post
+1. If you want to list your events somewhere in your theme files, insert `<?php echo wplc\_show\_events(); ?>`
+	> You can set special parameters to overwrite the default options if you use the PHP function call.
+	> All parameters are optional, but you must preserve the ordering by passing in `null` for options that you want to use defaults for.
+	> __Display Mode__ (string): `'list'` or `'table'`
+	> __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %START%, %END%, %DESCRIPTION%.
+	> __Date Format__ (string): The format to display the start and end date and time.  Uses [the same date formatting that Wordpress uses](http://codex.wordpress.org/Formatting_Date_and_Time).
+	> __Max. Events__ (int): The maximum number of events to display, -1 for unlimited.
+	> __Show Past Events__ (boolean): true to show all events, false to show only current and future events
+	> _Example:_ `<?php echo wplc\_show\_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false); ?>`
+
+== Frequently Asked Questions ==
+
+= Where does WPListCal store events? =
+
+On activation time, the plugin adds a table called &lt;prefix&gt;_wplistcal that stores all your events.
+
+= What happens to my events when I deactivate the plugin? =
+
+On deactivation, __the events table is dropped__, so if you want to save your event data, back up the table before deactivating the plugin.
+
+= Why is WPListCal different from other Wordpress calendar plugins? =
+
+WPListCal is specialized to provide clean list or table based output for you to style or reparse any way you'd like.  Other calendar plugins force you to use a gregorian calendar view which may be inappropriate for many applications.
+
+= I love WPListCal, but I'd like it to do \_\_\_\_\_\_. =
+
+Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
