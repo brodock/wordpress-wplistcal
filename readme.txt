@@ -20,7 +20,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 1. Change the default settings on the WPListCal options page
 1. If you want to list your events on a page or post, insert the tag `<!--wplistcal-->` in the body of the page/post
-1. If you want to list your events somewhere in your theme files, insert `<?php echo wplc\_show\_events(); ?>`
+1. If you want to list your events somewhere in your theme files, insert `<?php echo wplc_show_events(); ?>`
     > You can set special parameters to overwrite the default options if you use the PHP function call.
 
     > All parameters are optional, but you must preserve the ordering by passing in `null` for options that you want to use defaults for.
@@ -35,7 +35,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
     > __Show Past Events__ (boolean): true to show all events, false to show only current and future events
 
-    > _Example:_ `<?php echo wplc\_show\_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false); ?>`
+    > _Example:_ `<?php echo wplc_show_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false); ?>`
 
 == Frequently Asked Questions ==
 
