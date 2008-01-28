@@ -150,8 +150,9 @@ if(!$wplc_is_included) {
 		wplc_set_if_null($max_events, "wplc_max_events");
 		wplc_set_if_null($show_past_events, "wplc_show_past_events");
 	
-		if(!is_int($max_events))
+		if(!settype($max_events, "integer")) {
 			$max_events = -1;
+		}
 		if(!is_bool($show_past_events)) {
 			$show_past_events = $show_past_events == "true";
 		}

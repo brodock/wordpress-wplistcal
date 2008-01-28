@@ -3,7 +3,7 @@ Contributors: jonkern
 Tags: calendar, events
 Requires at least: 2.0.3
 Tested up to: 2.3.2
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
 
@@ -56,6 +56,10 @@ WPListCal is specialized to provide clean list or table based output for you to 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.0.2 =
+
+* Fixed a bug with the Maximum Events option that caused it to always default to show all events
 
 = 1.0.1 =
 
