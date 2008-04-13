@@ -1,15 +1,17 @@
 === WPListCal ===
 Contributors: jonkern
 Tags: calendar, events
-Requires at least: 2.0.3
-Tested up to: 2.3.2
-Stable tag: 1.0.2
+Requires at least: 2.5
+Tested up to: 2.5
+Stable tag: 1.0.3
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
 
 == Description ==
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.  It plugs straight into the Wordpress admin pages to let you keep track of events just like posts and pages.  You can then list events on a page or post using a special tag, or incorporate events into your theme files using a PHP function call.
+
+**Important: If you are running WordPress 2.5, you must use WPListCal 1.0.3 or later.  If you are running a pre-2.5 version of WordPress, you should use WPListCal 1.0.2 or upgrade your WordPress installation.  1.0.2 will be the last release for pre-2.5 versions of WordPress.**
 
 == Installation ==
 
@@ -35,7 +37,9 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
     > __Show Past Events__ (boolean): true to show all events, false to show only current and future events
 
-    > _Example:_ `<?php echo wplc_show_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false); ?>`
+	> __Maximum Advanced Notice__ (int): How many days in advance to display events, -1 for unlimited.
+
+    > _Example:_ `<?php echo wplc_show_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false, 30); ?>`
 
 == Frequently Asked Questions ==
 
@@ -51,11 +55,30 @@ On deactivation, __the events table is dropped__, so if you want to save your ev
 
 WPListCal is specialized to provide clean list or table based output for you to style or reparse any way you'd like.  Other calendar plugins force you to use a gregorian calendar view which may be inappropriate for many applications.
 
+= Does WPListCal work on WordPress 2.5? =
+
+WPListCal 1.0.3 works on 2.5
+
+= When I try to edit my options, I get an error: "Your attempt to edit your settings has failed." =
+
+Download WPListCal 1.0.3.
+
 = I love WPListCal, but I'd like it to do &lt;blank&gt;. =
 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.0.3 =
+
+* Fixed options bug introduced by WordPress 2.5
+* Restyled admin menus to look like WordPress 2.5
+* Localized a few hardcoded strings
+* Added 24hr time support for the admin area
+* Added advanced notice limit option
+* Every other event in both the list and table view has the css class 'wplc_alt' applied to it to allow alternating row formatting
+* Fixed maximum events setting on wplc_show_events
+* Fixed display of event titles containing single quotes
 
 = 1.0.2 =
 

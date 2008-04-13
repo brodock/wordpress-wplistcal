@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.0.2
+Version: 1.0.3
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -101,8 +101,10 @@ if(!$wplc_is_included) {
 			add_option("wplc_display_mode", "list");
 			add_option("wplc_event_format", "<strong>%NAME%</strong> &mdash; %START% - %END%\n<div style='margin-left:20px;'>%DESCRIPTION%</div>");
 			add_option("wplc_max_events", -1);
+			add_option("wplc_advance_days", -1);
 			add_option("wplc_show_past_events", false);
 			add_option("wplc_manage_items_per_page", 25);
+			add_option("wplc_use_24hr_time", false);
 		}
 	}
 
@@ -122,8 +124,10 @@ if(!$wplc_is_included) {
 		delete_option("wplc_display_mode");
 		delete_option("wplc_event_format");
 		delete_option("wplc_max_events");
+		delete_option("wplc_advance_days");
 		delete_option("wplc_show_past_events");
 		delete_option("wplc_manage_items_per_page");
+		delete_option("wplc_use_24hr_time");
 	}
 
 	register_activation_hook(__FILE__, "wplc_install");
@@ -139,7 +143,8 @@ if(!$wplc_is_included) {
 	//	  Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
 	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
 	// show_past_events (bool): whether to show past events, defaults to false
-	function wplc_show_events($display_mode=null, $event_format=null, $date_format=null, $max_events=null, $show_past_events=null) {
+	// advance_days (int): the amount of days in advance to display events, -1 for no limit
+	function wplc_show_events($display_mode=null, $event_format=null, $date_format=null, $max_events=null, $show_past_events=null, $advance_days=null) {
 		wplc_setup();
 		global $wplc_domain, $wpdb;
 	
@@ -148,10 +153,16 @@ if(!$wplc_is_included) {
 		wplc_set_if_null($event_format, "wplc_event_format");
 		wplc_set_if_null($date_format, "wplc_date_format");
 		wplc_set_if_null($max_events, "wplc_max_events");
+		wplc_set_if_null($advance_days, "wplc_advance_days");
 		wplc_set_if_null($show_past_events, "wplc_show_past_events");
 	
-		if(!settype($max_events, "integer")) {
+		$max_events = intval($max_events);
+		if($max_events == 0) {
 			$max_events = -1;
+		}
+		$advance_days = intval($advance_days);
+		if($advance_days == 0) {
+			$advance_days = -1;
 		}
 		if(!is_bool($show_past_events)) {
 			$show_past_events = $show_past_events == "true";
@@ -160,9 +171,20 @@ if(!$wplc_is_included) {
 		$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
 	
 		// Get events from DB
+		$whered = false;
 		$sql = "SELECT id, event_name, event_desc, event_start_time, event_end_time FROM $tbl_name";
-		if(!$show_past_events)
+		if(!$show_past_events) {
 			$sql .= " WHERE event_end_time >= ".time();
+			$whered = true;
+		}
+		if($advance_days > -1) {
+			if($whered)
+				$sql .= " AND ";
+			else
+				$sql .= " WHERE ";
+			
+			$sql .= "event_start_time < ".(time() + ($advance_days * 3600 * 24));
+		}
 			
 		$sql .= " ORDER BY event_start_time ASC, event_end_time ASC";
 		
@@ -180,7 +202,7 @@ if(!$wplc_is_included) {
 			// Prepare event string
 			$start = date($date_format, $events[$i]['event_start_time']);
 			$end = date($date_format, $events[$i]['event_end_time']);
-			$cleaned_name = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes($events[$i]['event_name'])));
+			$cleaned_name = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_name']))));
 			$cleaned_desc = nl2br(str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_desc'])))));
 		
 			if($display_mode == "list") {
@@ -189,15 +211,15 @@ if(!$wplc_is_included) {
 				$evt = str_replace("%START%", $start, $evt);
 				$evt = str_replace("%END%", $end, $evt);
 				$evt = str_replace("%ID%", $events[$i]['id'], $evt);
-				$ret .= "<li>".$evt."</li>";
+				$ret .= "<li".(($i % 2 == 1) ? " class='wplc_alt'" : "").">".$evt."</li>";
 			}
 			elseif($display_mode == "table") {
-				$ret .= "<tr>\n\t"
+				$ret .= "<tr".(($i % 2 == 1) ? " class='wplc_alt'" : "").">\n\t"
 							."<td class='wplc_event_name'>".stripslashes($events[$i]['event_name'])."</td>\n\t"
 							."<td class='wplc_event_start_time'>".$start."</td>\n\t"
 							."<td class='wplc_event_end_time'>".$end."</td>\n"
 						."</tr>\n"
-						."<tr>\n\t"
+						."<tr".(($i % 2 == 1) ? " class='wplc_alt'" : "").">\n\t"
 							."<td class='wplc_event_desc' colspan='3'>".nl2br(stripslashes(stripslashes($events[$i]['event_desc'])))."</td>\n"
 						."</tr>";
 			}
@@ -223,6 +245,13 @@ if(!$wplc_is_included) {
 	function wplc_show_event_form($event=array(), $message=null) {
 		wplc_setup();
 		global $wplc_domain;
+		
+		$editing = count($event) != 0;
+		
+		$use_24hr_time = get_option("wplc_use_24hr_time");
+		if(!is_bool($use_24hr_time)) {
+			$use_24hr_time = $use_24hr_time == "true";
+		}
 	
 		// Prep event times
 		$d = $event['event_start_time'];
@@ -231,9 +260,13 @@ if(!$wplc_is_included) {
 		$date['event_start_month'] = date('n', $d);
 		$date['event_start_day'] = date('j', $d);
 		$date['event_start_year'] = date('Y', $d);
-		$date['event_start_hour'] = date('g', $d);
+		if($use_24hr_time)
+			$date['event_start_hour'] = date('G', $d);
+		else
+			$date['event_start_hour'] = date('g', $d);
 		$date['event_start_minute'] = date('i', $d);
-		$date['event_start_ampm'] = date('A', $d);
+		if(!$use_24hr_time)
+			$date['event_start_ampm'] = date('A', $d);
 		
 		$d = $event['event_end_time'];
 		if(empty($d))
@@ -241,9 +274,13 @@ if(!$wplc_is_included) {
 		$date['event_end_month'] = date('n', $d);
 		$date['event_end_day'] = date('j', $d);
 		$date['event_end_year'] = date('Y', $d);
-		$date['event_end_hour'] = date('g', $d);
+		if($use_24hr_time)
+			$date['event_end_hour'] = date('G', $d);
+		else
+			$date['event_end_hour'] = date('g', $d);
 		$date['event_end_minute'] = date('i', $d);
-		$date['event_end_ampm'] = date('A', $d);
+		if(!$use_24hr_time)
+			$date['event_end_ampm'] = date('A', $d);
 		
 		if(!is_null($message)) {
 		?>
@@ -256,103 +293,144 @@ if(!$wplc_is_included) {
 		}
 		?>
 		<div class="wrap">
-			<form name="event" id="event" method="post" action="<?php echo $PHP_SELF; ?>">
-				<h2><?php echo count($event) != 0 ? "Edit" : "Add"; ?> Event</h2>
-				<input type="hidden" name="action" value="submitted" />
-				<?php
-				if(count($event) != 0) {
-				?>
-					<input type="hidden" name="id" value="<?php echo $event['id']; ?>" />
-				<?php
-				}
-				?>
-				<fieldset id="titlediv">
-					<legend><?php _e('Event Name', $wplc_domain); ?></legend>
-					<div><input type="text" name="event_name" size="30" value="<?php echo stripslashes($event['event_name']); ?>" id="title" /></div>
-				</fieldset>
+			<h2><?php echo $editing ? __("Edit Event", $wplc_domain) : __("Add Event", $wplc_domain); ?></h2>
+			<form name="event" id="event" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
+				<div id="poststuff">
+					<div class="submitbox" id="submitpost">
+						<div id="previewview">
+							<h4 style="color:white;margin:0;padding:0"><?php _e('Event Status', $wplc_domain); ?></h4>
+						</div>
+						<div class="inside">
+							&nbsp;
+						</div>
+						<p class="submit">
+							<input type="submit" name="save" id="save-post" value="<?php _e('Save', $wplc_domain); ?>" tabindex="15" class="button button-highlighted" />
+							<?php
+							if($editing) {
+								$dellink = "edit.php?page=wplistcal.php&op=delete&id=".$event['id'];
+								$dellink = (function_exists('wp_nonce_url')) ? wp_nonce_url($dellink, 'wplc-delete-event') : $dellink;
+								echo "<a class='submitdelete' href='".$dellink."' onclick=\"if(confirm('".__('You are about to delete this event \\\''.stripslashes($event['event_name']).'\\\'\n \\\'Cancel\\\' to stop, \\\'OK\\\' to delete.', $wplc_domain)."')) { return true; } return false;\">".__("Delete Event", $wplc_domain)."</a>";
+							}
+							?>
+						</p>
+						<div class="side-info">
+							<h5>Related</h5>
+							<ul>
+								<li><a href="edit.php?page=wplistcal.php"><?php _e('Manage Events', $wplc_domain); ?></a></li>
+								<li><a href="options-general.php?page=wplistcal.php"><?php _e('WPListCal Options', $wplc_domain); ?></a></li>
+							</ul>
+						</div>
+					</div>
+					<div id="post-body">
+						<input type="hidden" name="action" value="submitted" />
+						<?php
+						if($editing) {
+						?>
+							<input type="hidden" name="id" value="<?php echo $event['id']; ?>" />
+						<?php
+						}
+						?>
+						<div id="titlediv" class="wplc_eventformfield">
+							<h3><?php _e('Event Name', $wplc_domain); ?></h3>
+							<div id="titlewrap">
+								<input type="text" name="event_name" size="30" tabindex="1" value="<?php echo stripslashes(stripslashes($event['event_name'])); ?>" id="title" />
+							</div>
+						</div>
 
-				<fieldset id="startdiv">
-					<legend><?php _e('Start Date/Time', $wplc_domain); ?></legend>
-					<div>
-						<?php
-							$s[$date['event_start_month']] = " selected='selected'";
-						?>
-						<select name="start-month" id="start-month" onchange="wplc_matchValue('start-month', 'end-month', true);">
-							<option value="1"<?php echo $s['1']; ?>><?php _e('Jan', $wplc_domain); ?></option>
-							<option value="2"<?php echo $s['2']; ?>><?php _e('Feb', $wplc_domain); ?></option>
-							<option value="3"<?php echo $s['3']; ?>><?php _e('Mar', $wplc_domain); ?></option>
-							<option value="4"<?php echo $s['4']; ?>><?php _e('Apr', $wplc_domain); ?></option>
-							<option value="5"<?php echo $s['5']; ?>><?php _e('May', $wplc_domain); ?></option>
-							<option value="6"<?php echo $s['6']; ?>><?php _e('Jun', $wplc_domain); ?></option>
-							<option value="7"<?php echo $s['7']; ?>><?php _e('Jul', $wplc_domain); ?></option>
-							<option value="8"<?php echo $s['8']; ?>><?php _e('Aug', $wplc_domain); ?></option>
-							<option value="9"<?php echo $s['9']; ?>><?php _e('Sep', $wplc_domain); ?></option>
-							<option value="10"<?php echo $s['10']; ?>><?php _e('Oct', $wplc_domain); ?></option>
-							<option value="11"<?php echo $s['11']; ?>><?php _e('Nov', $wplc_domain); ?></option>
-							<option value="12"<?php echo $s['12']; ?>><?php _e('Dec', $wplc_domain); ?></option>
-						</select>
-						<input type="text" name="start-day" id="start-day" size="2" maxlength="2" value="<?php echo $date['event_start_day']; ?>" onblur="wplc_matchValue('start-day', 'end-day', false);" />
-						<input type="text" name="start-year" id="start-year" size="4" maxlength="4" value="<?php echo $date['event_start_year']; ?>" onblur="wplc_matchValue('start-year', 'end-year', false);" />
-						@ <input type="text" name="start-hour" id="start-hour" size="2" maxlength="2" value="<?php echo $date['event_start_hour']; ?>" onblur="wplc_matchValue('start-hour', 'end-hour', false);" />
-						: <input type="text" name="start-minute" id="start-minute" size="2" maxlength="2" value="<?php echo $date['event_start_minute']; ?>" onblur="wplc_matchValue('start-minute', 'end-minute', false);" />
-						<?php
-							$s[$date['event_start_ampm']] = " selected='selected'";
-						?>
-						<select name="start-ampm" id="start-ampm" onchange="wplc_matchValue('start-ampm', 'end-ampm', true);">
-							<option value="AM"<?php echo $s['AM']; ?>>AM</option>
-							<option value="PM"<?php echo $s['PM']; ?>>PM</option>
-						</select>
-					</div>
-				</fieldset>
+						<div id="startdiv" class="wplc_eventformfield">
+							<h3><?php _e('Start Date/Time', $wplc_domain); ?></h3>
+							<div id="startwrap">
+								<?php
+									$s[$date['event_start_month']] = " selected='selected'";
+								?>
+								<select name="start-month" id="start-month" onchange="wplc_matchValue('start-month', 'end-month', true);" tabindex="2">
+									<option value="1"<?php echo $s['1']; ?>><?php _e('Jan', $wplc_domain); ?></option>
+									<option value="2"<?php echo $s['2']; ?>><?php _e('Feb', $wplc_domain); ?></option>
+									<option value="3"<?php echo $s['3']; ?>><?php _e('Mar', $wplc_domain); ?></option>
+									<option value="4"<?php echo $s['4']; ?>><?php _e('Apr', $wplc_domain); ?></option>
+									<option value="5"<?php echo $s['5']; ?>><?php _e('May', $wplc_domain); ?></option>
+									<option value="6"<?php echo $s['6']; ?>><?php _e('Jun', $wplc_domain); ?></option>
+									<option value="7"<?php echo $s['7']; ?>><?php _e('Jul', $wplc_domain); ?></option>
+									<option value="8"<?php echo $s['8']; ?>><?php _e('Aug', $wplc_domain); ?></option>
+									<option value="9"<?php echo $s['9']; ?>><?php _e('Sep', $wplc_domain); ?></option>
+									<option value="10"<?php echo $s['10']; ?>><?php _e('Oct', $wplc_domain); ?></option>
+									<option value="11"<?php echo $s['11']; ?>><?php _e('Nov', $wplc_domain); ?></option>
+									<option value="12"<?php echo $s['12']; ?>><?php _e('Dec', $wplc_domain); ?></option>
+								</select>
+								<input type="text" name="start-day" id="start-day" size="2" maxlength="2" value="<?php echo $date['event_start_day']; ?>" tabindex="3" onblur="wplc_matchValue('start-day', 'end-day', false);" />
+								<input type="text" name="start-year" id="start-year" size="4" maxlength="4" value="<?php echo $date['event_start_year']; ?>" tabindex="4" onblur="wplc_matchValue('start-year', 'end-year', false);" />
+								@ <input type="text" name="start-hour" id="start-hour" size="2" maxlength="2" value="<?php echo $date['event_start_hour']; ?>" tabindex="5" onblur="wplc_matchValue('start-hour', 'end-hour', false);" />
+								: <input type="text" name="start-minute" id="start-minute" size="2" maxlength="2" value="<?php echo $date['event_start_minute']; ?>" tabindex="6" onblur="wplc_matchValue('start-minute', 'end-minute', false);" />
+								<?php
+									if(!$use_24hr_time) {
+										$s[$date['event_start_ampm']] = " selected='selected'";
+								?>
+								<select name="start-ampm" id="start-ampm" tabindex="7" onchange="wplc_matchValue('start-ampm', 'end-ampm', true);">
+									<option value="AM"<?php echo $s['AM']; ?>>AM</option>
+									<option value="PM"<?php echo $s['PM']; ?>>PM</option>
+								</select>
+								<?php
+									}
+								?>
+							</div>
+						</div>
 		
-				<fieldset id="enddiv">
-					<legend><?php _e('End Date/Time', $wplc_domain); ?></legend>
-					<div>
-						<?php
-							unset($s);
-							$s[$date['event_end_month']] = " selected='selected'";
-						?>
-						<select name="end-month" id="end-month" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
-							<option value="1"<?php echo $s['1']; ?>><?php _e('Jan', $wplc_domain); ?></option>
-							<option value="2"<?php echo $s['2']; ?>><?php _e('Feb', $wplc_domain); ?></option>
-							<option value="3"<?php echo $s['3']; ?>><?php _e('Mar', $wplc_domain); ?></option>
-							<option value="4"<?php echo $s['4']; ?>><?php _e('Apr', $wplc_domain); ?></option>
-							<option value="5"<?php echo $s['5']; ?>><?php _e('May', $wplc_domain); ?></option>
-							<option value="6"<?php echo $s['6']; ?>><?php _e('Jun', $wplc_domain); ?></option>
-							<option value="7"<?php echo $s['7']; ?>><?php _e('Jul', $wplc_domain); ?></option>
-							<option value="8"<?php echo $s['8']; ?>><?php _e('Aug', $wplc_domain); ?></option>
-							<option value="9"<?php echo $s['9']; ?>><?php _e('Sep', $wplc_domain); ?></option>
-							<option value="10"<?php echo $s['10']; ?>><?php _e('Oct', $wplc_domain); ?></option>
-							<option value="11"<?php echo $s['11']; ?>><?php _e('Nov', $wplc_domain); ?></option>
-							<option value="12"<?php echo $s['12']; ?>><?php _e('Dec', $wplc_domain); ?></option>
-						</select>
-						<input type="text" name="end-day" id="end-day" size="2" maxlength="2" value="<?php echo $date['event_end_day']; ?>" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-						<input type="text" name="end-year" id="end-year" size="4" maxlength="4" value="<?php echo $date['event_end_year']; ?>" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-						@ <input type="text" name="end-hour" id="end-hour" size="2" maxlength="2" value="<?php echo $date['event_end_hour']; ?>" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-						: <input type="text" name="end-minute" id="end-minute" size="2" maxlength="2" value="<?php echo $date['event_end_minute']; ?>" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-						<?php
-							$s[$date['event_end_ampm']] = " selected='selected'";
-						?>
-						<select name="end-ampm" id="end-ampm" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
-							<option value="AM"<?php echo $s['AM']; ?>>AM</option>
-							<option value="PM"<?php echo $s['PM']; ?>>PM</option>
-						</select>
-					</div>
-				</fieldset>
+						<div id="enddiv" class="wplc_eventformfield">
+							<h3><?php _e('End Date/Time', $wplc_domain); ?></h3>
+							<div id="endwrap">
+								<?php
+									unset($s);
+									$s[$date['event_end_month']] = " selected='selected'";
+								?>
+								<select name="end-month" tabindex="8" id="end-month" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
+									<option value="1"<?php echo $s['1']; ?>><?php _e('Jan', $wplc_domain); ?></option>
+									<option value="2"<?php echo $s['2']; ?>><?php _e('Feb', $wplc_domain); ?></option>
+									<option value="3"<?php echo $s['3']; ?>><?php _e('Mar', $wplc_domain); ?></option>
+									<option value="4"<?php echo $s['4']; ?>><?php _e('Apr', $wplc_domain); ?></option>
+									<option value="5"<?php echo $s['5']; ?>><?php _e('May', $wplc_domain); ?></option>
+									<option value="6"<?php echo $s['6']; ?>><?php _e('Jun', $wplc_domain); ?></option>
+									<option value="7"<?php echo $s['7']; ?>><?php _e('Jul', $wplc_domain); ?></option>
+									<option value="8"<?php echo $s['8']; ?>><?php _e('Aug', $wplc_domain); ?></option>
+									<option value="9"<?php echo $s['9']; ?>><?php _e('Sep', $wplc_domain); ?></option>
+									<option value="10"<?php echo $s['10']; ?>><?php _e('Oct', $wplc_domain); ?></option>
+									<option value="11"<?php echo $s['11']; ?>><?php _e('Nov', $wplc_domain); ?></option>
+									<option value="12"<?php echo $s['12']; ?>><?php _e('Dec', $wplc_domain); ?></option>
+								</select>
+								<input type="text" name="end-day" id="end-day" size="2" maxlength="2" value="<?php echo $date['event_end_day']; ?>" tabindex="9" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
+								<input type="text" name="end-year" id="end-year" size="4" maxlength="4" value="<?php echo $date['event_end_year']; ?>" tabindex="10" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
+								@ <input type="text" name="end-hour" id="end-hour" size="2" maxlength="2" value="<?php echo $date['event_end_hour']; ?>" tabindex="11" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
+								: <input type="text" name="end-minute" id="end-minute" size="2" maxlength="2" value="<?php echo $date['event_end_minute']; ?>" tabindex="12" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
+								<?php
+									if(!$use_24hr_time) {
+										$s[$date['event_end_ampm']] = " selected='selected'";
+								?>
+								<select name="end-ampm" id="end-ampm" tabindex="13" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
+									<option value="AM"<?php echo $s['AM']; ?>>AM</option>
+									<option value="PM"<?php echo $s['PM']; ?>>PM</option>
+								</select>
+								<?php
+									}
+								?>
+							</div>
+						</div>
 		
-				<fieldset id="descriptiondiv">
-					<legend><?php _e('Description', $wplc_domain); ?></legend>
-					<div>
-						<?php
-							the_editor(stripslashes(stripslashes($event['event_desc'])));
-						?>
+						<div id="descriptiondiv" class="wplc_eventformfield">
+							<h3><?php _e('Description', $wplc_domain); ?></h3>
+							<div id="descriptionwrap">
+								<?php
+									the_editor(stripslashes(stripslashes($event['event_desc'])));
+								?>
+							</div>
+						</div>
+						<script type="text/javascript" charset="utf-8">
+						//<![CDATA[
+							var editor = document.getElementById('content')
+							if(editor != null && typeof(editor) != 'undefined')
+								editor.tabIndex = 14;
+						//]]>
+						</script>
 					</div>
-				</fieldset>
-		
-				<p class="submit">
-					<input name="save" type="submit" id="save" value="<?php _e('Save and Continue Editing'); ?>" />
-					<input name="submit" type="submit" id="submit" value="Save" style="font-weight:bold;" />
-				</p>
+				</div>
 			</form>
 		</div>
 		<?php
@@ -518,12 +596,33 @@ if(!$wplc_is_included) {
 		<?php
 	}
 	
+	add_action("admin_head", "wplc_admin_css");
+	function wplc_admin_css() {
+		?>
+		
+		<style type="text/css" media="screen">
+			.wplc_eventformfield {
+				margin: 10px 8px 20px 20px;
+				padding: 0px;
+				border-color: rgb(235, 235, 235);
+			}
+			.wplc_delete:hover {
+				background-color: red;
+				border-bottom: 1px solid red;
+				color: white;
+			}
+		</style>
+		<?php
+	}
+	
 	add_action("wp_ajax_wplc_delete_event", "wplc_delete_event");
-	function wplc_delete_event() {
+	function wplc_delete_event($id=null) {
 		wplc_setup();
 		global $wplc_domain, $wpdb;
 		
-		$id = $wpdb->escape($_POST['id']);
+		if($id == null)
+			$id = $wpdb->escape($_POST['id']);
+			
 		$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
 		
 		$sql = "DELETE FROM ".$tbl_name." WHERE id=".$id;
@@ -538,6 +637,17 @@ if(!$wplc_is_included) {
 			wplc_delete_event($_POST['id']);
 			return;
 		}
+		
+		if($_GET['op'] == 'delete') {
+			if(function_exists('wp_nonce_url')) {
+				check_admin_referer('wplc-delete-event');
+			}
+			
+			wplc_delete_event($_GET['id']);
+			
+			// Set message
+			$message = __("Event deleted", $wplc_domain);
+		}
 	
 		$itemsperpage = get_option("wplc_manage_items_per_page");
 		$page = $_GET['wplc_pg'];
@@ -547,6 +657,11 @@ if(!$wplc_is_included) {
 		else {
 			$offset = 0;
 			$page = 1;
+		}
+		
+		$use_24hr_time = get_option("wplc_use_24hr_time");
+		if(!is_bool($use_24hr_time)) {
+			$use_24hr_time = $use_24hr_time == "true";
 		}
 		
 		// Check how many events there are
@@ -561,16 +676,50 @@ if(!$wplc_is_included) {
 			 ." ORDER BY event_start_time DESC, event_end_time DESC"
 			 ." LIMIT ".$wpdb->escape($offset).", ".$wpdb->escape($itemsperpage);
 		$events = $wpdb->get_results($sql, ARRAY_A);
-	
-		$dateformat = __('D, M j, Y @ g:ia', $wplc_domain);
+		
+		if($use_24hr_time)
+			$dateformat = 'D, M j, Y @ G:i';
+		else
+			$dateformat = 'D, M j, Y @ g:ia';
 		
 		$delmsg = __("You are about to delete the event \'%s\'. \\n\'OK\' to delete, \'Cancel\' to stop.", $wplc_domain);
-	
+		
+		if(!is_null($message)) {
+		?>
+			<div id="message" class="updated fade">
+				<p>
+					<?php echo $message; ?>
+				</p>
+			</div>
+		<?php
+		}
 		?>
 		
 		<div class="wrap">
 			<h2><?php _e("Events", $wplc_domain); ?></h2>
-	
+			<div class="tablenav">
+				<div class="tablenav-pages">
+					<?php
+					if($offset + $itemsperpage < $totalevents) {
+						echo "<a href='edit.php?wplc_pg=".($page+1)."&amp;page=wplistcal.php'>";
+						_e("&laquo; Previous Events", $wplc_domain);
+						echo "</a>";
+						$prevshown = true;
+					}
+					if($page > 1) {
+						if($prevshown)
+							echo " | ";
+						echo "<a href='edit.php?wplc_pg=".($page-1)."&amp;page=wplistcal.php'>";
+						_e("Next Events &raquo;", $wplc_domain);
+						echo "</a>";
+					}
+					?>
+				</div>
+				<div class="alignleft" style="margin-top:3px;">
+					<a href="post-new.php?page=wplistcal.php"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
+				</div>
+			</div>
+			<br class="clear" />
 			<table class="widefat">
 				<thead>
 					<tr>
@@ -591,12 +740,12 @@ if(!$wplc_is_included) {
 				?>
 	
 					<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
-						<th scope="row" style="text-align:center;"><?php echo $events[$i]['id']; ?></th>
-						<td><?php echo $events[$i]['event_name']; ?></td>
+						<th scope="row" style="text-align:center;" class="check-column"><?php echo $events[$i]['id']; ?></th>
+						<td><a href="post-new.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplistcal.php" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a></td>
 						<td><?php echo $start; ?></td>
 						<td><?php echo $end; ?></td>
 						<td><a href="post-new.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplistcal.php" class="edit"><?php _e("Edit", $wplc_domain); ?></a></td>
-						<td><a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="delete"><?php _e("Delete", $wplc_domain); ?></a></td>
+						<td><a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="wplc_delete"><?php _e("Delete", $wplc_domain); ?></a></td>
 					</tr>
 	
 				<?php
@@ -605,27 +754,29 @@ if(!$wplc_is_included) {
 		
 				</tbody>
 			</table>
-			<?php
-			if($offset + $itemsperpage < $totalevents) {
-				echo "<p><a href='edit.php?wplc_pg=".($page+1)."&amp;page=wplistcal.php'>";
-				_e("&laquo; Previous Events", $wplc_domain);
-				echo "</a>";
-				$prevshown = true;
-			}
-			if($page > 1) {
-				if($prevshown)
-					echo " | ";
-				else
-					echo "<p>";
-				echo "<a href='edit.php?wplc_pg=".($page-1)."&amp;page=wplistcal.php'>";
-				_e("Next Events &raquo;", $wplc_domain);
-				echo "</a>";
-				$nextshown = true;
-			}
-			if($prevshown || $nextshown)
-				echo "</p>";
-			?>
-			<h3><a href="post-new.php?page=wplistcal.php">Add New Event &raquo;</a></h3>
+			<div class="tablenav">
+				<div class="tablenav-pages">
+					<?php
+					if($offset + $itemsperpage < $totalevents) {
+						echo "<a href='edit.php?wplc_pg=".($page+1)."&amp;page=wplistcal.php'>";
+						_e("&laquo; Previous Events", $wplc_domain);
+						echo "</a>";
+						$prevshown = true;
+					}
+					if($page > 1) {
+						if($prevshown)
+							echo " | ";
+						echo "<a href='edit.php?wplc_pg=".($page-1)."&amp;page=wplistcal.php'>";
+						_e("Next Events &raquo;", $wplc_domain);
+						echo "</a>";
+					}
+					?>
+				</div>
+				<div class="alignleft" style="margin-top:3px;">
+					<a href="post-new.php?page=wplistcal.php"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
+				</div>
+			</div>
+			<br class="clear" />
 		</div>
 		<?php
 	}
@@ -652,22 +803,25 @@ if(!$wplc_is_included) {
 		wplc_setup();
 		global $wplc_domain;
 		
+		$use_24hr_time = get_option("wplc_use_24hr_time");
+		if(!is_bool($use_24hr_time)) {
+			$use_24hr_time = $use_24hr_time == "true";
+		}
 		?>
 		
 		<div class="wrap">
 			<form method="post" action="options.php">
-				<?php wp_nonce_field('update_options'); ?>
+				<?php wp_nonce_field('update-options'); ?>
 				<h2><?php _e("WPListCal Options", $wplc_domain); ?></h2>
-				<p class="submit"><input type="submit" name="Submit" value="<?php _e("Update Options &raquo;", $wplc_domain); ?>" /></p>
-				<table width="100%" cellspacing="2" cellpadding="5" class="optiontable editform">
+				<table class="form-table">
 					<tr valign="top" id="displaymode">
-						<th width="33%" scope="row"><?php _e("Display Mode:", $wplc_domain); ?></th>
+						<th scope="row"><?php _e("Display Mode:", $wplc_domain); ?></th>
 						<td>
 							<input type="radio" name="wplc_display_mode" value="list" id="wplc_display_mode_list" onclick="wplc_changeDisabled('wplc_event_format', false);"<?php echo get_option('wplc_display_mode') == 'list' ? "checked='checked'" : ""; ?> />
 								<label for="wplc_display_mode_list"><?php _e("Show events in an unordered list <em>(Default)</em>", $wplc_domain); ?></label>
 							<br />
-							<fieldset style="margin-left: 25px;">
-								<legend style="float:left; margin-top:2px;"><?php _e("Event Format", $wplc_domain); ?> <a href="javascript:;" title="<?php _e("The following variables are available: %NAME%, %START%, %END%, %DESCRIPTION%", $wplc_domain); ?>" style="cursor:help;" />?</a>:</legend>
+							<fieldset style="margin-left: 25px;border:none;">
+								<legend style="float:left; margin-top:2px;"><?php _e("Event Format", $wplc_domain); ?> <a href="javascript:;" title="<?php _e("The following variables are available: %NAME%, %START%, %END%, %DESCRIPTION%", $wplc_domain); ?>" style="cursor:help;">?</a>:</legend>
 								<div>
 									<textarea name="wplc_event_format" id="wplc_event_format" style="width:350px; height:50px;"<?php echo get_option('wplc_display_mode') == 'list' ? "" : "disabled='disabled'"; ?>><?php echo htmlentities(get_option('wplc_event_format')); ?></textarea>
 								</div>
@@ -680,8 +834,20 @@ if(!$wplc_is_included) {
 						<th scope="row"><?php _e("Date/Time Format:", $wplc_domain); ?></th>
 						<td>
 							<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" /><br />
-							<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), time()); ?><br /><br />
+							<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), time()); ?><br />
 							<a href="http://codex.wordpress.org/Formatting_Date_and_Time">Documentation on date formatting.</a> Click &quot;Update Options&quot; to update sample output.
+						</td>
+					</tr>
+					<tr valign="top" id="24hr_time">
+						<th scope="row"><?php _e("12/24 Hour Time:", $wplc_domain); ?></th>
+						<td>
+							<input type="radio" name="wplc_use_24hr_time" id="wplc_use_24hr_time0" value="false"<?php echo $use_24hr_time ? '' : ' checked=\'checked\''; ?> />
+							<label for="wplc_use_24hr_time0"><?php _e("Use 12 hour time (e.g. 1:35pm)", $wplc_domain); ?></label>
+							<br />
+							<input type="radio" name="wplc_use_24hr_time" id="wplc_use_24hr_time1" value="true"<?php echo $use_24hr_time ? ' checked=\'checked\'' : ''; ?> />
+							<label for="wplc_use_24hr_time1"><?php _e("Use 24 hour time (e.g. 13:35)", $wplc_domain); ?></label>
+							<br />
+							<?php _e("What time-style to use in the admin area (does not affect what is displayed on your site)", $wplc_domain); ?>
 						</td>
 					</tr>
 					<tr valign="top" id="maxevents">
@@ -689,6 +855,13 @@ if(!$wplc_is_included) {
 						<td>
 							<input type="text" name="wplc_max_events" size="4" value="<?php echo get_option('wplc_max_events'); ?>" /><br />
 							<?php _e("How many events to display in the event list, -1 for no limit", $wplc_domain); ?>
+						</td>
+					</tr>
+					<tr valign="top" id="advancenotice">
+						<th scope="row"><?php _e("Maximum Advanced Notice:", $wplc_domain); ?></th>
+						<td>
+							<input type="text" name="wplc_advance_days" size="4" value="<?php echo get_option('wplc_advance_days'); ?>" /><br />
+							<?php _e("How many days in advance to display events, -1 for no limit", $wplc_domain); ?>
 						</td>
 					</tr>
 					<tr valign="top" id="showpastevents">
@@ -710,8 +883,8 @@ if(!$wplc_is_included) {
 					</tr>
 				</table>
 				<input type="hidden" name="action" value="update" />
-				<input type="hidden" name="page_options" value="wplc_display_mode,wplc_event_format,wplc_date_format,wplc_max_events,wplc_show_past_events,wplc_manage_items_per_page" />
-				<p class="submit"><input type="submit" name="Submit" value="<?php _e("Update Options &raquo;", $wplc_domain); ?>" /></p>
+				<input type="hidden" name="page_options" value="wplc_display_mode,wplc_event_format,wplc_date_format,wplc_use_24hr_time,wplc_max_events,wplc_advance_days,wplc_show_past_events,wplc_manage_items_per_page" />
+				<p class="submit"><input type="submit" name="Submit" value="<?php _e("Update Options &raquo;", $wplc_domain); ?>" class="button" /></p>
 			</form>
 		</div>
 		
