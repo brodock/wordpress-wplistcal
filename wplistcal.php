@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.0.3
+Version: 1.0.4
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -203,7 +203,7 @@ if(!$wplc_is_included) {
 			$start = date($date_format, $events[$i]['event_start_time']);
 			$end = date($date_format, $events[$i]['event_end_time']);
 			$cleaned_name = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_name']))));
-			$cleaned_desc = nl2br(str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_desc'])))));
+			$cleaned_desc = nl2br(htmlspecialchars_decode(str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_desc']))))));
 		
 			if($display_mode == "list") {
 				$evt = str_replace("%NAME%", $cleaned_name, $event_format);
@@ -307,7 +307,7 @@ if(!$wplc_is_included) {
 							<input type="submit" name="save" id="save-post" value="<?php _e('Save', $wplc_domain); ?>" tabindex="15" class="button button-highlighted" />
 							<?php
 							if($editing) {
-								$dellink = "edit.php?page=wplistcal.php&op=delete&id=".$event['id'];
+								$dellink = "edit.php?page=".$_GET['page']."&op=delete&id=".$event['id'];
 								$dellink = (function_exists('wp_nonce_url')) ? wp_nonce_url($dellink, 'wplc-delete-event') : $dellink;
 								echo "<a class='submitdelete' href='".$dellink."' onclick=\"if(confirm('".__('You are about to delete this event \\\''.stripslashes($event['event_name']).'\\\'\n \\\'Cancel\\\' to stop, \\\'OK\\\' to delete.', $wplc_domain)."')) { return true; } return false;\">".__("Delete Event", $wplc_domain)."</a>";
 							}
@@ -316,8 +316,13 @@ if(!$wplc_is_included) {
 						<div class="side-info">
 							<h5>Related</h5>
 							<ul>
-								<li><a href="edit.php?page=wplistcal.php"><?php _e('Manage Events', $wplc_domain); ?></a></li>
-								<li><a href="options-general.php?page=wplistcal.php"><?php _e('WPListCal Options', $wplc_domain); ?></a></li>
+								<li><a href="edit.php?page=<?php echo $_GET['page']; ?>"><?php _e('Manage Events', $wplc_domain); ?></a></li>
+								<?php 
+									get_currentuserinfo();
+									if($user_level > 6) {
+								?>
+								<li><a href="options-general.php?page=<?php echo $_GET['page']; ?>"><?php _e('WPListCal Options', $wplc_domain); ?></a></li>
+								<? } ?>
 							</ul>
 						</div>
 					</div>
@@ -414,7 +419,7 @@ if(!$wplc_is_included) {
 							</div>
 						</div>
 		
-						<div id="descriptiondiv" class="wplc_eventformfield">
+						<div id="<?php echo user_can_richedit() ? 'postdivrich' : 'postdiv'; ?>" class="wplc_eventformfield postarea">
 							<h3><?php _e('Description', $wplc_domain); ?></h3>
 							<div id="descriptionwrap">
 								<?php
@@ -538,12 +543,21 @@ if(!$wplc_is_included) {
 		
 		add_submenu_page("post.php", __("WPListCal - Add Event", $wplc_domain), __("Add Event", $wplc_domain), 2, __FILE__, "wplc_show_admin_write_page");
 		add_management_page(__("WPListCal - Manage Events", $wplc_domain), __("Events", $wplc_domain), 2, __FILE__, "wplc_show_admin_manage_page");
-		add_options_page(__("WPListCal - Options", $wplc_domain), __("WPListCal", $wplc_domain), 6, __FILE__, "wplc_show_admin_options_page");
+		
+		get_currentuserinfo();
+		if($user_level > 6) {
+			add_options_page(__("WPListCal - Options", $wplc_domain), __("WPListCal", $wplc_domain), 6, __FILE__, "wplc_show_admin_options_page");
+		}
 	}
 	
 	add_action('admin_print_scripts', 'wplc_js_admin_header');
 	function wplc_js_admin_header() {
 		wp_print_scripts(array('sack'));
+		if (user_can_richedit()) {
+		    wp_enqueue_script('editor');
+		}
+		wp_enqueue_script('thickbox');
+		wp_enqueue_script('media-upload');
 		?>
 		<script type="text/javascript" charset="utf-8">
 		//<![CDATA[
@@ -701,7 +715,7 @@ if(!$wplc_is_included) {
 				<div class="tablenav-pages">
 					<?php
 					if($offset + $itemsperpage < $totalevents) {
-						echo "<a href='edit.php?wplc_pg=".($page+1)."&amp;page=wplistcal.php'>";
+						echo "<a href='edit.php?wplc_pg=".($page+1)."&amp;page=".$_GET['page']."'>";
 						_e("&laquo; Previous Events", $wplc_domain);
 						echo "</a>";
 						$prevshown = true;
@@ -709,14 +723,14 @@ if(!$wplc_is_included) {
 					if($page > 1) {
 						if($prevshown)
 							echo " | ";
-						echo "<a href='edit.php?wplc_pg=".($page-1)."&amp;page=wplistcal.php'>";
+						echo "<a href='edit.php?wplc_pg=".($page-1)."&amp;page=".$_GET['page']."'>";
 						_e("Next Events &raquo;", $wplc_domain);
 						echo "</a>";
 					}
 					?>
 				</div>
 				<div class="alignleft" style="margin-top:3px;">
-					<a href="post-new.php?page=wplistcal.php"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
+					<a href="post-new.php?page=<?php echo $_GET['page']; ?>"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
 				</div>
 			</div>
 			<br class="clear" />
@@ -741,10 +755,10 @@ if(!$wplc_is_included) {
 	
 					<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
 						<th scope="row" style="text-align:center;" class="check-column"><?php echo $events[$i]['id']; ?></th>
-						<td><a href="post-new.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplistcal.php" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a></td>
+						<td><a href="post-new.php?id=<?php echo $events[$i]['id']; ?>&amp;page=<?php echo $_GET['page']; ?>" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a></td>
 						<td><?php echo $start; ?></td>
 						<td><?php echo $end; ?></td>
-						<td><a href="post-new.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplistcal.php" class="edit"><?php _e("Edit", $wplc_domain); ?></a></td>
+						<td><a href="post-new.php?id=<?php echo $events[$i]['id']; ?>&amp;page=<?php echo $_GET['page']; ?>" class="edit"><?php _e("Edit", $wplc_domain); ?></a></td>
 						<td><a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="wplc_delete"><?php _e("Delete", $wplc_domain); ?></a></td>
 					</tr>
 	
@@ -758,7 +772,7 @@ if(!$wplc_is_included) {
 				<div class="tablenav-pages">
 					<?php
 					if($offset + $itemsperpage < $totalevents) {
-						echo "<a href='edit.php?wplc_pg=".($page+1)."&amp;page=wplistcal.php'>";
+						echo "<a href='edit.php?wplc_pg=".($page+1)."&amp;page=".$_GET['page']."'>";
 						_e("&laquo; Previous Events", $wplc_domain);
 						echo "</a>";
 						$prevshown = true;
@@ -766,14 +780,14 @@ if(!$wplc_is_included) {
 					if($page > 1) {
 						if($prevshown)
 							echo " | ";
-						echo "<a href='edit.php?wplc_pg=".($page-1)."&amp;page=wplistcal.php'>";
+						echo "<a href='edit.php?wplc_pg=".($page-1)."&amp;page=".$_GET['page']."'>";
 						_e("Next Events &raquo;", $wplc_domain);
 						echo "</a>";
 					}
 					?>
 				</div>
 				<div class="alignleft" style="margin-top:3px;">
-					<a href="post-new.php?page=wplistcal.php"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
+					<a href="post-new.php?page=<?php echo $_GET['page']; ?>"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
 				</div>
 			</div>
 			<br class="clear" />

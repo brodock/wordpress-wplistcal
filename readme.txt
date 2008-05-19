@@ -3,7 +3,7 @@ Contributors: jonkern
 Tags: calendar, events
 Requires at least: 2.5
 Tested up to: 2.5
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
 
@@ -57,17 +57,28 @@ WPListCal is specialized to provide clean list or table based output for you to 
 
 = Does WPListCal work on WordPress 2.5? =
 
-WPListCal 1.0.3 works on 2.5
+WPListCal 1.0.3 and later work on 2.5
 
 = When I try to edit my options, I get an error: "Your attempt to edit your settings has failed." =
 
-Download WPListCal 1.0.3.
+Download WPListCal 1.0.3 or later.
+
+= When I click edit on the manage page, I get the error: "Cannot find wplistcal.php" =
+
+Download WPListCal 1.0.4 or later.
 
 = I love WPListCal, but I'd like it to do &lt;blank&gt;. =
 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.0.4 =
+
+* Fixed edit &amp; options links to work when wplistcal.php is in a subfolder
+* Removed options link from edit &amp; new event pages if the user doesn't have permissions to view it
+* Settings tab no longer appears to users who do not have permissions to it
+* Visual editor now works properly (also fixes switcheditors not defined error)
 
 = 1.0.3 =
 
