@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.0.4
+Version: 1.0.5
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -36,13 +36,21 @@ $wplc_is_setup = false;
 
 // If not running PHP5, define str_ireplace()
 if(!function_exists("str_ireplace")) {
-	function str_ireplace($search, $replace, $subject){
+	function str_ireplace($search, $replace, $subject) {
 	   $i = 0;
-	   while($pos = strpos(strtolower($subject), $search, $i)){
+	   while($pos = strpos(strtolower($subject), $search, $i)) {
 	       $subject = substr($subject, 0, $pos).$replace.substr($subject, $pos+strlen($search));
 	       $i = $pos+strlen($replace);
 	   }
 	   return $subject;
+	}
+}
+
+if(!function_exists("htmlspecialchars_decode")) {
+	function htmlspecialchars_decode($string,$style=ENT_COMPAT) {
+		$translation = array_flip(get_html_translation_table(HTML_SPECIALCHARS,$style));
+		if($style === ENT_QUOTES){ $translation['&#039;'] = '\''; }
+		return strtr($string,$translation);
 	}
 }
 
@@ -281,6 +289,9 @@ if(!$wplc_is_included) {
 		$date['event_end_minute'] = date('i', $d);
 		if(!$use_24hr_time)
 			$date['event_end_ampm'] = date('A', $d);
+			
+		get_currentuserinfo();
+		global $user_ID;
 		
 		if(!is_null($message)) {
 		?>
@@ -295,6 +306,7 @@ if(!$wplc_is_included) {
 		<div class="wrap">
 			<h2><?php echo $editing ? __("Edit Event", $wplc_domain) : __("Add Event", $wplc_domain); ?></h2>
 			<form name="event" id="event" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
+				<input type="hidden" id="user-id" name="user_ID" value="<?php echo (int) $user_ID ?>" />
 				<div id="poststuff">
 					<div class="submitbox" id="submitpost">
 						<div id="previewview">
@@ -319,10 +331,11 @@ if(!$wplc_is_included) {
 								<li><a href="edit.php?page=<?php echo $_GET['page']; ?>"><?php _e('Manage Events', $wplc_domain); ?></a></li>
 								<?php 
 									get_currentuserinfo();
+									global $user_level;
 									if($user_level > 6) {
 								?>
 								<li><a href="options-general.php?page=<?php echo $_GET['page']; ?>"><?php _e('WPListCal Options', $wplc_domain); ?></a></li>
-								<? } ?>
+								<?php } ?>
 							</ul>
 						</div>
 					</div>
@@ -545,6 +558,7 @@ if(!$wplc_is_included) {
 		add_management_page(__("WPListCal - Manage Events", $wplc_domain), __("Events", $wplc_domain), 2, __FILE__, "wplc_show_admin_manage_page");
 		
 		get_currentuserinfo();
+		global $user_level;
 		if($user_level > 6) {
 			add_options_page(__("WPListCal - Options", $wplc_domain), __("WPListCal", $wplc_domain), 6, __FILE__, "wplc_show_admin_options_page");
 		}
