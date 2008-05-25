@@ -1,5 +1,6 @@
 === WPListCal ===
 Contributors: jonkern
+Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
 Requires at least: 2.5
 Tested up to: 2.5.1
