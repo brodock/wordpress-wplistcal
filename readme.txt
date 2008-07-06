@@ -56,7 +56,7 @@ On activation time, the plugin adds a table called &lt;prefix&gt;_wplistcal that
 
 = What happens to my events when I deactivate the plugin? =
 
-<s>On deactivation, __the events table is dropped__, so if you want to save your event data, back up the table before deactivating the plugin.</s>
+Before version 1.0.6, on deactivation, __the events table is dropped__, so if you want to save your event data, back up the table before deactivating the plugin.
 
 As of 1.0.6, deactivating the plugin has no effect on your data. When upgrading to 1.0.6, DO NOT deactivate the plugin until you have uploaded the new version of `wplistcal.php`
 
