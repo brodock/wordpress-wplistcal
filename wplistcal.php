@@ -254,6 +254,8 @@ if(!$wplc_is_included) {
 		wplc_setup();
 		global $wplc_domain;
 		
+		wplc_upgrade_if_needed();
+		
 		$editing = count($event) != 0;
 		
 		$use_24hr_time = get_option("wplc_use_24hr_time");
