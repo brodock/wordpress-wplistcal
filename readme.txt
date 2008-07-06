@@ -4,7 +4,7 @@ Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
 Requires at least: 2.5
 Tested up to: 2.5.1
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
 
@@ -16,8 +16,14 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 == Installation ==
 
-1. Upload `wplistcal.php` to the `/wp-content/plugins/` directory
+1. Upload `wplistcal.php` to the `/wp-content/plugins/` directory or any subdirectory
 1. Activate the plugin through the 'Plugins' menu in WordPress
+
+= Upgrade =
+
+1. DO NOT DEACTIVATE THE PREVIOUS VERSION OF THE PLUGIN! Doing so will remove all your events.
+1. Upload `wplistcal.php` to the `wp-content/plugins/` directory or any subdirectory
+1. Deactivate and then activate the plugin though the 'Plugins' menu in WordPress
 
 = Usage =
 
@@ -30,7 +36,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
     > __Display Mode__ (string): `'list'` or `'table'`
 
-    > __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %START%, %END%, %DESCRIPTION%.
+    > __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %LINK%, %LINKEDNAME%, %START%, %END%, %DESCRIPTION%.
 
     > __Date Format__ (string): The format to display the start and end date and time.  Uses [the same date formatting that Wordpress uses](http://codex.wordpress.org/Formatting_Date_and_Time).
 
@@ -40,7 +46,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 	> __Maximum Advanced Notice__ (int): How many days in advance to display events, -1 for unlimited.
 
-    > _Example:_ `<?php echo wplc_show_events('list', '%NAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false, 30); ?>`
+    > _Example:_ `<?php echo wplc_show_events('list', '%LINKEDNAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false, 30); ?>`
 
 == Frequently Asked Questions ==
 
@@ -50,7 +56,9 @@ On activation time, the plugin adds a table called &lt;prefix&gt;_wplistcal that
 
 = What happens to my events when I deactivate the plugin? =
 
-On deactivation, __the events table is dropped__, so if you want to save your event data, back up the table before deactivating the plugin.
+<s>On deactivation, __the events table is dropped__, so if you want to save your event data, back up the table before deactivating the plugin.</s>
+
+As of 1.0.6, deactivating the plugin has no effect on your data. When upgrading to 1.0.6, DO NOT deactivate the plugin until you have uploaded the new version of `wplistcal.php`
 
 = Why is WPListCal different from other Wordpress calendar plugins? =
 
@@ -74,19 +82,28 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 
 == Changelog ==
 
+= 1.0.6 =
+
+* Added link field to events
+* Description box now has the correct tab index on the new &amp; edit pages
+* Table view now uses properly cleaned fields
+* Past events option now defaults to "Only show current and future events" if it is not set
+* Deactivating the plugin no longer deletes all WPListCal settings and data
+* Write section tab now named Event instead of Add Event for consistency with WordPress
+
 = 1.0.5 =
 
 * Return of the WPListCal options tab
 * Fixed the visual editor
-* Fixed htmlspecialchars_decode function error
-* Plugin now works on servers with short_open_tag disabled
+* Fixed `htmlspecialchars_decode` function error
+* Plugin now works on servers with `short_open_tag` disabled
 
 = 1.0.4 =
 
-* Fixed edit &amp; options links to work when wplistcal.php is in a subfolder
+* Fixed edit &amp; options links to work when `wplistcal.php` is in a subfolder
 * Removed options link from edit &amp; new event pages if the user doesn't have permissions to view it
 * Settings tab no longer appears to users who do not have permissions to it
-* Visual editor now works properly (also fixes switcheditors not defined error)
+* Visual editor now works properly (also fixes `switcheditors not defined` error)
 
 = 1.0.3 =
 
@@ -95,8 +112,8 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 * Localized a few hardcoded strings
 * Added 24hr time support for the admin area
 * Added advanced notice limit option
-* Every other event in both the list and table view has the css class 'wplc_alt' applied to it to allow alternating row formatting
-* Fixed maximum events setting on wplc_show_events
+* Every other event in both the list and table view has the css class `wplc_alt` applied to it to allow alternating row formatting
+* Fixed maximum events setting on `wplc_show_events`
 * Fixed display of event titles containing single quotes
 
 = 1.0.2 =
