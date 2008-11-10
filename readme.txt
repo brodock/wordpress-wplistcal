@@ -3,8 +3,8 @@ Contributors: jonkern
 Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
 Requires at least: 2.5
-Tested up to: 2.5.1
-Stable tag: 1.0.6
+Tested up to: 2.6.3
+Stable tag: 1.0.7
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
 
@@ -21,7 +21,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 = Upgrade =
 
-1. DO NOT DEACTIVATE THE PREVIOUS VERSION OF THE PLUGIN! Doing so will remove all your events.
+1. DO NOT DEACTIVATE THE PREVIOUS VERSION OF THE PLUGIN! Doing so could remove all your events.
 1. Upload `wplistcal.php` to the `wp-content/plugins/` directory or any subdirectory
 1. Deactivate and then activate the plugin though the 'Plugins' menu in WordPress
 
@@ -45,8 +45,16 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
     > __Show Past Events__ (boolean): true to show all events, false to show only current and future events
 
 	> __Maximum Advanced Notice__ (int): How many days in advance to display events, -1 for unlimited.
+	
+	> __Event Order__ (string): `'asc'` to show the closest event first or `'desc'` to show the furthest event first.
+	
+	> __Hide Same Date__ (bool): Format the end date with the format string defined in the next parameter if it is on the same day as the start date.
+	
+	> __Date 2 Time Format__ (string): If Hide Same Date is enabled, use this format string for the end date.
+	
+	> __No Events Message__ (string): If there are no events, show this string instead, leave blank for none.
 
-    > _Example:_ `<?php echo wplc_show_events('list', '%LINKEDNAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false, 30); ?>`
+    > _Example:_ `<?php echo wplc_show_events('list', '%LINKEDNAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false, 30, 'asc', true, 'g:ia', 'Sorry, no events'); ?>`
 
 == Frequently Asked Questions ==
 
@@ -81,6 +89,13 @@ Download WPListCal 1.0.4 or later.
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.0.7 =
+
+* Added the option to use a different date format for the end date if the event starts and ends on the same day
+* Added the option to display a message if there are no events to show
+* Added the option to set rel='nofollow' on links in the event listing
+* Added the option to display events in reverse order
 
 = 1.0.6 =
 

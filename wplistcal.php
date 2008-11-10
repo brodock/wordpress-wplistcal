@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.0.6
+Version: 1.0.7
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -90,7 +90,7 @@ if(!$wplc_is_included) {
 		
 			// Add dummy data
 			$welcome_event_name = __("Add events to WPListCal", $wplc_domain);
-			$welcome_event_desc = __("Congratulations, you've just installed WPListCal! Now you just need to add your events into the system via event tab in the Write area of the admin panel.", $wplc_domain);
+			$welcome_event_desc = __("Congratulations, you've just installed WPListCal! Now you just need to add your events into the system via the event tab in the Write area of the admin panel.", $wplc_domain);
 			$welcome_event_start_time = time();
 			$welcome_event_end_time = time() + 3600;
 		
@@ -101,19 +101,25 @@ if(!$wplc_is_included) {
 							  '".$wpdb->escape($welcome_event_start_time)."',
 							  '".$wpdb->escape($welcome_event_end_time)."');";
 			$results = $wpdb->query($insert);
-		
-			add_option("wplc_db_version", WPLC_DB_VERSION);
-			add_option("wplc_tbl_name", $tbl_name);
-			add_option("wplc_date_format", "M j, Y g:ia");
-			add_option("wplc_display_mode", "list");
-			add_option("wplc_event_format", "<strong>%LINKEDNAME%</strong> &mdash; %START% - %END%\n<div style='margin-left:20px;'>%DESCRIPTION%</div>");
-			add_option("wplc_max_events", -1);
-			add_option("wplc_advance_days", -1);
-			add_option("wplc_show_past_events", false);
-			add_option("wplc_manage_items_per_page", 25);
-			add_option("wplc_use_24hr_time", false);
-			add_option("wplc_open_links_in_new_window", false);
 		}
+		
+		// If an option already exists, these functions do nothing
+		add_option("wplc_db_version", WPLC_DB_VERSION);
+		add_option("wplc_tbl_name", $tbl_name);
+		add_option("wplc_date_format", "M j, Y g:ia");
+		add_option("wplc_display_mode", "list");
+		add_option("wplc_event_format", "<strong>%LINKEDNAME%</strong> &mdash; %START% - %END%\n<div style='margin-left:20px;'>%DESCRIPTION%</div>");
+		add_option("wplc_max_events", -1);
+		add_option("wplc_advance_days", -1);
+		add_option("wplc_show_past_events", false);
+		add_option("wplc_manage_items_per_page", 25);
+		add_option("wplc_use_24hr_time", false);
+		add_option("wplc_open_links_in_new_window", false);
+		add_option("wplc_event_order", "asc");
+		add_option("wplc_hide_same_date", true);
+		add_option("wplc_date2_time_format", "g:ia");
+		add_option("wplc_nofollow_links", true);
+		add_option("wplc_no_events_msg", "");
 		
 		wplc_upgrade_if_needed();
 	}
@@ -147,7 +153,12 @@ if(!$wplc_is_included) {
 	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
 	// show_past_events (bool): whether to show past events, defaults to false
 	// advance_days (int): the amount of days in advance to display events, -1 for no limit
-	function wplc_show_events($display_mode=null, $event_format=null, $date_format=null, $max_events=null, $show_past_events=null, $advance_days=null) {
+	// event_order (string): Either "asc" or "desc". "asc" shows the closest event first, 
+	//    "desc" shows the furthest event first
+ 	// hide_same_date (bool): whether to hide the second date if it is on the same day, defaults to true
+	// date2_time_format (string): if hide_same_date is true, then format the second timestamp with this
+	// no_events_msg (string): The message to show if there are no events to display, empty string for none
+	function wplc_show_events($display_mode=null, $event_format=null, $date_format=null, $max_events=null, $show_past_events=null, $advance_days=null, $event_order=null, $hide_same_date=null, $date2_time_format=null, $no_events_msg=null) {
 		wplc_setup();
 		global $wplc_domain, $wpdb;
 	
@@ -158,6 +169,10 @@ if(!$wplc_is_included) {
 		wplc_set_if_null($max_events, "wplc_max_events");
 		wplc_set_if_null($advance_days, "wplc_advance_days");
 		wplc_set_if_null($show_past_events, "wplc_show_past_events");
+		wplc_set_if_null($hide_same_date, "wplc_hide_same_date");
+		wplc_set_if_null($date2_time_format, "wplc_date2_time_format");
+		wplc_set_if_null($no_events_msg, "wplc_no_events_msg");
+		wplc_set_if_null($event_order, "wplc_event_order");
 	
 		$max_events = intval($max_events);
 		if($max_events == 0) {
@@ -171,7 +186,7 @@ if(!$wplc_is_included) {
 			$show_past_events = $show_past_events == "true";
 		}
 
-		$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
+		$tbl_name = get_option("wplc_tbl_name");
 	
 		// Get events from DB
 		$whered = false;
@@ -188,13 +203,24 @@ if(!$wplc_is_included) {
 			
 			$sql .= "event_start_time < ".(time() + ($advance_days * 3600 * 24));
 		}
-			
-		$sql .= " ORDER BY event_start_time ASC, event_end_time ASC";
+		
+		if($event_order == "asc") {
+			$order = "ASC";
+		}
+		else {
+			$order = "DESC";
+		}
+		
+		$sql .= " ORDER BY event_start_time ".$order.", event_end_time ".$order;
 		
 		if($max_events > -1)
-			$sql .= " LIMIT ".$wpdb->escape($max_events);
+			$sql .= " LIMIT ".$max_events;
 		
-		$events = $wpdb->get_results($sql, ARRAY_A);
+		$events = $wpdb->get_results($wpdb->escape($sql), ARRAY_A);
+		
+		if(!empty($no_events_msg) && count($events) == 0) {
+			return $no_events_msg;
+		}
 	
 		// Print events
 		if($display_mode == "list")
@@ -205,11 +231,21 @@ if(!$wplc_is_included) {
 			// Prepare event string
 			$start = date($date_format, $events[$i]['event_start_time']);
 			$end = date($date_format, $events[$i]['event_end_time']);
+			// Check for same date
+			if($hide_same_date) {
+				$start_date = date("Ymd", $events[$i]['event_start_time']);
+				$end_date = date("Ymd", $events[$i]['event_end_time']);
+				
+				if($start_date == $end_date) {
+					$end = date($date2_time_format, $events[$i]['event_end_time']);
+				}
+			}
 			$cleaned_name = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_name']))));
 			$cleaned_desc = nl2br(htmlspecialchars_decode(str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_desc']))))));
 			$cleaned_link = htmlspecialchars(stripslashes(stripslashes($events[$i]['event_link'])));
 			$target = get_option("wplc_open_links_in_new_window") == "true" ? " target='_blank'" : "";
-			$linked_name = empty($cleaned_link) ? $cleaned_name : "<a href='".$cleaned_link."'".$target.">".$cleaned_name."</a>";
+			$nofollow = get_option("wplc_nofollow_links") == "true" ? " rel='nofollow'" : "";
+			$linked_name = empty($cleaned_link) ? $cleaned_name : "<a href='".$cleaned_link."'".$target.$nofollow.">".$cleaned_name."</a>";
 		
 			if($display_mode == "list") {
 				$evt = str_replace("%NAME%", $cleaned_name, $event_format);
@@ -857,6 +893,16 @@ if(!$wplc_is_included) {
 		if(!is_bool($open_links_in_new_window)) {
 			$open_links_in_new_window = $open_links_in_new_window == "true";
 		}
+		
+		$hide_same_date = get_option("wplc_hide_same_date");
+		if(!is_bool($hide_same_date)) {
+			$hide_same_date = $hide_same_date == "true";
+		}
+		
+		$nofollow_links = get_option("wplc_nofollow_links");
+		if(!is_bool($nofollow_links)) {
+			$nofollow_links = $nofollow_links == "true";
+		}
 		?>
 		
 		<div class="wrap">
@@ -900,6 +946,22 @@ if(!$wplc_is_included) {
 							<?php _e("What time-style to use in the admin area (does not affect what is displayed on your site)", $wplc_domain); ?>
 						</td>
 					</tr>
+					<tr valign="top" id="hide_same_date">
+						<th scope="row"><?php _e("End Date Options:", $wplc_domain); ?></th>
+						<td>
+							<input type="radio" name="wplc_hide_same_date" value="true" id="wplc_hide_same_date_true" onclick="wplc_changeDisabled('wplc_date2_time_format', false);"<?php echo $hide_same_date ? "checked='checked'" : ""; ?> />
+								<label for="wplc_hide_same_date_true"><?php _e("If even starts and ends on the same day, use the time format below for the end date <em>(Default)</em>", $wplc_domain); ?></label>
+							<br />
+							<fieldset style="margin-left: 25px;border:none;">
+								<legend style="float:left; margin-top:2px;"><?php _e("End Date Format", $wplc_domain); ?>:</legend>
+								<div>
+									<input type="text" name="wplc_date2_time_format" id="wplc_date2_time_format" value="<?php echo get_option('wplc_date2_time_format'); ?>"<?php echo $hide_same_date ? "" : "disabled='disabled'"; ?> />
+								</div>
+							</fieldset>
+							<input type="radio" name="wplc_hide_same_date" value="false" id="wplc_hide_same_date_false" onclick="wplc_changeDisabled('wplc_date2_time_format', true);"<?php echo $hide_same_date ? "" : "checked='checked'"; ?> />
+								<label for="wplc_hide_same_date_false"><?php _e("Use the same format for both start and end dates", $wplc_domain); ?></label>
+						</td>
+					</tr>
 					<tr valign="top" id="maxevents">
 						<th scope="row"><?php _e("Maximum Displayed Events:", $wplc_domain); ?></th>
 						<td>
@@ -924,6 +986,23 @@ if(!$wplc_is_included) {
 								<label for="wplc_show_past_events_true"><?php _e("Show all events, even if they have already occurred", $wplc_domain); ?></label>
 						</td>
 					</tr>
+					<tr valign="top" id="eventorder">
+						<th scope="row"><?php _e("Event Order:", $wplc_domain); ?></th>
+						<td>
+							<input type="radio" name="wplc_event_order" value="asc" id="wplc_event_order_asc"<?php echo get_option('wplc_event_order') == 'asc' ? "checked='checked'" : ""; ?> />
+								<label for="wplc_event_order_asc"><?php _e("Show the closest event first", $wplc_domain); ?></label>
+							<br />
+							<input type="radio" name="wplc_event_order" value="desc" id="wplc_event_order_desc"<?php echo get_option('wplc_event_order') == 'desc' ? "checked='checked'" : ""; ?> />
+								<label for="wplc_event_order_desc"><?php _e("Show the furthest event first", $wplc_domain); ?></label>
+						</td>
+					</tr>
+					<tr valign="top" id="no_events_msg">
+						<th scope="row"><?php _e("No Events Message:", $wplc_domain); ?></th>
+						<td>
+							<input type="text" name="wplc_no_events_msg" size="30" value="<?php echo get_option('wplc_no_events_msg'); ?>" /><br />
+							<?php _e("Message to show if there are no events, leave blank for none", $wplc_domain); ?>
+						</td>
+					</tr>
 					<tr valign="top" id="adminperpage">
 						<th scope="row"><?php _e("Admin Items Per Page:", $wplc_domain); ?></th>
 						<td>
@@ -941,9 +1020,16 @@ if(!$wplc_is_included) {
 							<label for="wplc_open_links_in_new_window1"><?php _e("Open links in a new window", $wplc_domain); ?></label>
 						</td>
 					</tr>
+					<tr valign="top" id="nofollow_links">
+						<th scope="row"><?php _e("Link No Follow:", $wplc_domain); ?></th>
+						<td>
+							<input type="checkbox" name="wplc_nofollow_links" id="wplc_nofollow_links" value="true"<?php echo $nofollow_links ? ' checked=\'checked\'' : ''; ?> />
+							<label for="wplc_nofollow_links"><?php _e("Set rel=&quot;nofollow&quot; on links", $wplc_domain); ?></label>
+						</td>
+					</tr>
 				</table>
 				<input type="hidden" name="action" value="update" />
-				<input type="hidden" name="page_options" value="wplc_display_mode,wplc_event_format,wplc_date_format,wplc_use_24hr_time,wplc_max_events,wplc_advance_days,wplc_show_past_events,wplc_manage_items_per_page,wplc_open_links_in_new_window" />
+				<input type="hidden" name="page_options" value="wplc_display_mode,wplc_event_format,wplc_date_format,wplc_use_24hr_time,wplc_hide_same_date,wplc_date2_time_format,wplc_max_events,wplc_advance_days,wplc_show_past_events,wplc_no_events_msg,wplc_manage_items_per_page,wplc_open_links_in_new_window,wplc_nofollow_links" />
 				<p class="submit"><input type="submit" name="Submit" value="<?php _e("Update Options &raquo;", $wplc_domain); ?>" class="button" /></p>
 			</form>
 		</div>
