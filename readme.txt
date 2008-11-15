@@ -98,7 +98,7 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 
 == Changelog ==
 
-= 1.1 (development release) =
+= 1.1b1 (development release) =
 
 * Updated all styles and elements for WordPress 2.7
 * Menus refactored to fit into the new WordPress 2.7 menu structure
