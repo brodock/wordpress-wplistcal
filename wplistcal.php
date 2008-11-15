@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.0.7
+Version: 1.0.8
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -286,6 +286,9 @@ if(!$wplc_is_included) {
 			$var = get_option($option_id);
 	}
 
+	if($_GET['page'] == plugin_basename(__FILE__)) {
+		add_action( 'admin_head', 'wp_tiny_mce' );
+	}
 	function wplc_show_event_form($event=array(), $message=null) {
 		wplc_setup();
 		global $wplc_domain;
@@ -481,7 +484,7 @@ if(!$wplc_is_included) {
 							<h3><?php _e('Description', $wplc_domain); ?></h3>
 							<div id="descriptionwrap">
 								<?php
-									the_editor(stripslashes(stripslashes($event['event_desc'])) /*content*/, "content" /*fieldId*/, "end-ampm" /*previousfieldId*/);
+									the_editor(stripslashes(stripslashes($event['event_desc'])) /*content*/, "content" /*fieldId*/, "end-ampm" /*previousfieldId*/, false /*media_upload*/, 15);
 								?>
 							</div>
 						</div>
