@@ -12,7 +12,11 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.  It plugs straight into the Wordpress admin pages to let you keep track of events just like posts and pages.  You can then list events on a page or post using a special tag, or incorporate events into your theme files using a PHP function call.
 
-**Important: If you are running WordPress 2.5, you must use WPListCal 1.0.3 or later.  If you are running a pre-2.5 version of WordPress, you should use WPListCal 1.0.2 or upgrade your WordPress installation.  1.0.2 will be the last release for pre-2.5 versions of WordPress.**
+= Version Guide =
+
+WordPress 2.7 or later &rarr; Use WPListCal 1.1 (development release, not yet stable)
+WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.1 (current stable release)
+WordPress 2.0.3-2.3.3 &rarr; Use WPListCal 1.0.2
 
 == Installation ==
 
@@ -72,6 +76,10 @@ As of 1.0.6, deactivating the plugin has no effect on your data. When upgrading 
 
 WPListCal is specialized to provide clean list or table based output for you to style or reparse any way you'd like.  Other calendar plugins force you to use a gregorian calendar view which may be inappropriate for many applications.
 
+= Does WPListCal work on WorePress 2.7? =
+
+WPListCal 1.1 and later work on 2.7
+
 = Does WPListCal work on WordPress 2.5? =
 
 WPListCal 1.0.3 and later work on 2.5
@@ -90,7 +98,13 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 
 == Changelog ==
 
-= 1.0.8.1 =
+= 1.1 (development release) =
+
+* Updated all styles and elements for WordPress 2.7
+* Menus refactored to fit into the new WordPress 2.7 menu structure
+* Dashboard now shows number of events published
+
+= 1.0.8.1 (current stable) =
 
 * Fixed options page warning
 
