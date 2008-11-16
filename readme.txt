@@ -103,6 +103,7 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 * Updated all styles and elements for WordPress 2.7
 * Menus refactored to fit into the new WordPress 2.7 menu structure
 * Dashboard now shows number of events published
+* Added a location field
 
 = 1.0.8.1 (current stable) =
 

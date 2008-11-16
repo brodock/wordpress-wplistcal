@@ -30,7 +30,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-define("WPLC_DB_VERSION", "1.0.6");
+define("WPLC_DB_VERSION", "1.1");
 $wplc_domain = "wplistcal";
 $wplc_is_setup = false;
 $wplc_plugin = plugin_basename(__FILE__);
@@ -81,6 +81,7 @@ if(!$wplc_is_included) {
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				event_name text NOT NULL,
 				event_link text,
+				event_loc text,
 				event_desc text,
 				event_start_time bigint(11) DEFAULT '0' NOT NULL,
 				event_end_time bigint(11) DEFAULT '0' NOT NULL,
@@ -140,6 +141,10 @@ if(!$wplc_is_included) {
 			$sql = "ALTER TABLE $tbl_name ADD event_link text;";
 			maybe_add_column($tbl_name, "event_link", $sql);
 			
+			// v1.0.6 -> v1.1b
+			$sql = "ALTER TABLE $tbl_name ADD event_loc text;";
+			maybe_add_column($tbl_name, "event_loc", $sql);
+			
 			update_option("wplc_db_version", WPLC_DB_VERSION);
 		}
 	}
@@ -148,8 +153,8 @@ if(!$wplc_is_included) {
 	//----------------------------------------------------------------------------------------------
 	// Parameters (all optional - defaults are defined on the options page):
 	// display_mode (string): Either "list" or "table"
-	// event_format (string): The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%, %DESCRIPTION%,
-	//	  %START%, and %END% to include event data
+	// event_format (string): The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%,
+	//    %LOCATION%, %DESCRIPTION%, %START%, and %END% to include event data
 	// date_format (string): The format for dates/times. Use the PHP date() format just like
 	//	  Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
 	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
@@ -192,7 +197,7 @@ if(!$wplc_is_included) {
 	
 		// Get events from DB
 		$whered = false;
-		$sql = "SELECT id, event_name, event_link, event_desc, event_start_time, event_end_time FROM $tbl_name";
+		$sql = "SELECT id, event_name, event_link, event_loc, event_desc, event_start_time, event_end_time FROM $tbl_name";
 		if(!$show_past_events) {
 			$sql .= " WHERE event_end_time >= ".time();
 			$whered = true;
@@ -253,6 +258,7 @@ if(!$wplc_is_included) {
 				$evt = str_replace("%NAME%", $cleaned_name, $event_format);
 				$evt = str_replace("%LINK%", $cleaned_link, $evt);
 				$evt = str_replace("%LINKEDNAME%", $linked_name, $evt);
+				$evt = str_replace("%LOCATION%", $events[$i]['event_loc'], $evt);
 				$evt = str_replace("%DESCRIPTION%", $cleaned_desc, $evt);
 				$evt = str_replace("%START%", $start, $evt);
 				$evt = str_replace("%END%", $end, $evt);
@@ -262,11 +268,12 @@ if(!$wplc_is_included) {
 			elseif($display_mode == "table") {
 				$ret .= "<tr".(($i % 2 == 1) ? " class='wplc_alt'" : "").">\n\t"
 							."<td class='wplc_event_name'>".$linked_name."</td>\n\t"
+							."<td class='wplc_event_location'>".$events[$i]['event_loc']."</td>\n\t"
 							."<td class='wplc_event_start_time'>".$start."</td>\n\t"
 							."<td class='wplc_event_end_time'>".$end."</td>\n"
 						."</tr>\n"
 						."<tr".(($i % 2 == 1) ? " class='wplc_alt'" : "").">\n\t"
-							."<td class='wplc_event_desc' colspan='3'>".$cleaned_desc."</td>\n"
+							."<td class='wplc_event_desc' colspan='4'>".$cleaned_desc."</td>\n"
 						."</tr>";
 			}
 		}
@@ -373,7 +380,7 @@ if(!$wplc_is_included) {
 												?>
 											</div>
 											<div id="publishing-action">
-												<input type="submit" name="save" id="save-post" value="<?php _e('Publish', $wplc_domain); ?>" tabindex="15" class="button-primary" />
+												<input type="submit" name="save" id="save-post" value="<?php _e('Save', $wplc_domain); ?>" tabindex="15" class="button-primary" />
 											</div>
 											<div class="clear"></div>
 										</div>
@@ -396,6 +403,14 @@ if(!$wplc_is_included) {
 								<div id="titlewrap-noformat" class="inside">
 									<label class="hidden" for="title-noformat">Title</label>
 									<input type="text" name="event_name" size="30" tabindex="1" value="<?php echo stripslashes(stripslashes($event['event_name'])); ?>" id="title-noformat" />
+								</div>
+							</div>
+							
+							<div id="locdiv" class="postbox">
+								<h3 class="hndle"><?php _e('Location', $wplc_domain); ?></h3>
+								<div id="locwrap" class="inside">
+									<label class="hidden" for="location">Location</label>
+									<input type="text" name="event_loc" size="30" tabindex="2" value="<?php echo stripslashes(stripslashes($event['event_loc'])); ?>" id="location" />
 								</div>
 							</div>
 						
@@ -514,6 +529,7 @@ if(!$wplc_is_included) {
 		$gobacktoeditform = !empty($postvars['save']);
 	
 		$name = addslashes($postvars['event_name']);
+		$location = addslashes($postvars['event_loc']);
 		$link = addslashes($postvars['event_link']);
 		$description = addslashes($postvars['content']);
 		
@@ -554,9 +570,10 @@ if(!$wplc_is_included) {
 		// Add data to db
 		if(empty($postvars['id'])) {
 			$insert = "INSERT INTO ".$tbl_name.
-					  " (event_name, event_link, event_desc, event_start_time, event_end_time) ".
+					  " (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time) ".
 					  "VALUES('".$wpdb->escape($name)."',
 							  '".$wpdb->escape($link)."',
+							  '".$wpdb->escape($location)."',
 							  '".$wpdb->escape($description)."',
 							  '".$wpdb->escape($start)."',
 							  '".$wpdb->escape($end)."');";
@@ -566,6 +583,7 @@ if(!$wplc_is_included) {
 			$update = "UPDATE ".$tbl_name.
 				  	  " SET event_name='".$wpdb->escape($name)."',".
 					  "event_link='".$wpdb->escape($link)."',".
+					  "event_loc='".$wpdb->escape($location)."',".
 					  "event_desc='".$wpdb->escape($description)."',".
 					  "event_start_time='".$wpdb->escape($start)."',".
 					  "event_end_time='".$wpdb->escape($end)."' ".
@@ -643,7 +661,7 @@ if(!$wplc_is_included) {
 	function wplc_actlinks($links) { 
 		global $wplc_plugin;
 		// Add a link to this plugin's settings page
-		$settings_link = '<a href="options-general.php?page='.$wplc_plugin.'">Settings</a>'; 
+		$settings_link = '<a href="options-general.php?page=wplc-options">Settings</a>'; 
 		array_unshift( $links, $settings_link ); 
 		return $links; 
 	}
@@ -730,7 +748,7 @@ if(!$wplc_is_included) {
 				float:left;
 				clear:right;
 			}
-			#link, #title-noformat {
+			#link, #title-noformat, #location {
 				margin: 1px;
 				padding: 0;
 				border: 0;
@@ -738,7 +756,7 @@ if(!$wplc_is_included) {
 				font-size: 1.7em;
 				outline: none;
 			}
-			#linkwrap, #titlewrap-noformat {
+			#linkwrap, #titlewrap-noformat, #locwrap {
 				border: 1px solid rgb(204, 204, 204);
 				padding: 2px 3px;
 			}
@@ -768,6 +786,8 @@ if(!$wplc_is_included) {
 	function wplc_show_admin_manage_page() {
 		wplc_setup();
 		global $wplc_domain, $wpdb, $wplc_plugin;
+		
+		wplc_upgrade_if_needed();
 		
 		if($_POST['action'] == "delete") {
 			wplc_delete_event($_POST['id']);
@@ -807,7 +827,7 @@ if(!$wplc_is_included) {
 		
 	
 		// Get events for this page
-		$sql = "SELECT id, event_name, event_start_time, event_end_time"
+		$sql = "SELECT id, event_name, event_loc, event_start_time, event_end_time"
 			 ." FROM ".$wpdb->escape(get_option("wplc_tbl_name"))
 			 ." ORDER BY event_start_time DESC, event_end_time DESC"
 			 ." LIMIT ".$wpdb->escape($offset).", ".$wpdb->escape($itemsperpage);
@@ -861,9 +881,9 @@ if(!$wplc_is_included) {
 					<tr>
 						<th scope="col" style="text-align:center;"><?php _e("ID", $wplc_domain); ?></th>
 						<th scope="col"><?php _e("Event Name", $wplc_domain); ?></th>
+						<th scope="col"><?php _e("Location", $wplc_domain); ?></th>
 						<th scope="col"><?php _e("Start Date/Time", $wplc_domain); ?></th>
 						<th scope="col"><?php _e("End Date/Time", $wplc_domain); ?></th>
-						<th scope="col" colspan="2" style="text-align:center;"><?php _e("Action", $wplc_domain); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -877,11 +897,12 @@ if(!$wplc_is_included) {
 	
 					<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
 						<th scope="row" style="text-align:center;" class="check-column"><?php echo $events[$i]['id']; ?></th>
-						<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a></td>
+						<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=<?php echo $wplc_plugin; ?>" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a><br />
+							<a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=<?php echo $wplc_plugin; ?>" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="wplc_delete"><?php _e("Delete", $wplc_domain); ?></a>
+						</td>
+						<td><?php echo stripslashes(stripslashes($events[$i]['event_loc'])); ?></td>
 						<td><?php echo $start; ?></td>
 						<td><?php echo $end; ?></td>
-						<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a></td>
-						<td><a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="wplc_delete"><?php _e("Delete", $wplc_domain); ?></a></td>
 					</tr>
 	
 				<?php
