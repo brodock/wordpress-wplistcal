@@ -32,11 +32,6 @@ function wplc_set_if_null(&$var, $option_id) {
 add_action('admin_print_scripts', 'wplc_js_admin_header');
 function wplc_js_admin_header() {
 	wp_print_scripts(array('sack'));
-	if (user_can_richedit()) {
-	    wp_enqueue_script('editor');
-	}
-	wp_enqueue_script('thickbox');
-	wp_enqueue_script('media-upload');
 	?>
 	<script type="text/javascript" charset="utf-8">
 	//<![CDATA[
