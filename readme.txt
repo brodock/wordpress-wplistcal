@@ -33,6 +33,7 @@ WordPress 2.0.3-2.3.3 &rarr; Use WPListCal 1.0.2
 
 1. Change the default settings on the WPListCal options page
 1. If you want to list your events on a page or post, insert the tag `<!--wplistcal-->` in the body of the page/post
+1. If you want to list your events in your sidebar, activate the WPListCal widget in the widget admin section
 1. If you want to list your events somewhere in your theme files, insert `<?php echo wplc_show_events(); ?>`
     > You can set special parameters to overwrite the default options if you use the PHP function call.
 
@@ -104,6 +105,8 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 * Menus refactored to fit into the new WordPress 2.7 menu structure
 * Dashboard now shows number of events published
 * Added a location field
+* Added widget support
+* Refactored code into separate files
 
 = 1.0.8.1 (current stable) =
 
