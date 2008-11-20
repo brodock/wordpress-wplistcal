@@ -30,7 +30,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-define("WPLC_DB_VERSION", "1.1");
+define("WPLC_DB_VERSION", "1.1b");
 $wplc_domain = "wplistcal";
 $wplc_is_setup = false;
 $wplc_plugin = plugin_basename(__FILE__);
@@ -71,7 +71,8 @@ if(!$wplc_is_included) {
 	// Plugin DB Installation
 	function wplc_install() {
 		wplc_setup();
-		global $wpdb, $wplc_domain;
+		global $wpdb, $wplc_domain, $current_user;
+		get_currentuserinfo();
 	
 		$tbl_name = $wpdb->prefix."wplistcal";
 	
@@ -85,6 +86,9 @@ if(!$wplc_is_included) {
 				event_desc text,
 				event_start_time bigint(11) DEFAULT '0' NOT NULL,
 				event_end_time bigint(11) DEFAULT '0' NOT NULL,
+				event_author bigint(20) unsigned,
+				event_create_time bigint(11) DEFAULT '0' NOT NULL,
+				event_modified_time bigint(11) DEFAULT '0' NOT NULL,
 				PRIMARY KEY  id (id)
 			);";
 		
@@ -96,13 +100,17 @@ if(!$wplc_is_included) {
 			$welcome_event_desc = __("Congratulations, you've just installed WPListCal! Now you just need to add your events into the system via the event tab in the Write area of the admin panel.", $wplc_domain);
 			$welcome_event_start_time = time();
 			$welcome_event_end_time = time() + 3600;
+			$welcome_event_create_mod_time = time();
 		
 			$insert = "INSERT INTO ".$tbl_name.
-					  " (event_name, event_desc, event_start_time, event_end_time) ".
+					  " (event_name, event_desc, event_start_time, event_end_time, event_create_time, event_modified_time, event_author) ".
 					  "VALUES('".$wpdb->escape($welcome_event_name)."',
 							  '".$wpdb->escape($welcome_event_desc)."',
 							  '".$wpdb->escape($welcome_event_start_time)."',
-							  '".$wpdb->escape($welcome_event_end_time)."');";
+							  '".$wpdb->escape($welcome_event_end_time)."',
+							  '".$wpdb->escape($welcome_event_create_mod_time)."',
+							  '".$wpdb->escape($welcome_event_create_mod_time)."',
+							  '".$wpdb->escape($current_user->ID)."');";
 			$results = $wpdb->query($insert);
 		}
 		
@@ -145,6 +153,12 @@ if(!$wplc_is_included) {
 			// v1.0.6 -> v1.1b
 			$sql = "ALTER TABLE $tbl_name ADD event_loc text;";
 			maybe_add_column($tbl_name, "event_loc", $sql);
+			$sql = "ALTER TABLE $tbl_name ADD event_create_time bigint(11) DEFAULT '0' NOT NULL;";
+			maybe_add_column($tbl_name, "event_create_time", $sql);
+			$sql = "ALTER TABLE $tbl_name ADD event_modified_time bigint(11) DEFAULT '0' NOT NULL;";
+			maybe_add_column($tbl_name, "event_modified_time", $sql);
+			$sql = "ALTER TABLE $tbl_name ADD event_author bigint(20) UNSIGNED;";
+			maybe_add_column($tbl_name, "event_author", $sql);
 			
 			update_option("wplc_db_version", WPLC_DB_VERSION);
 		}
@@ -155,7 +169,7 @@ if(!$wplc_is_included) {
 	// Parameters (all optional - defaults are defined on the options page):
 	// display_mode (string): Either "list" or "table"
 	// event_format (string): The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%,
-	//    %LOCATION%, %DESCRIPTION%, %START%, and %END% to include event data
+	//    %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR% to include event data
 	// date_format (string): The format for dates/times. Use the PHP date() format just like
 	//	  Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
 	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
@@ -198,18 +212,52 @@ if(!$wplc_is_included) {
 	
 		// Get events from DB
 		$whered = false;
-		$sql = "SELECT id, event_name, event_link, event_loc, event_desc, event_start_time, event_end_time FROM $tbl_name";
+		$sql = "SELECT e.id as id,
+					e.event_name as event_name,
+					e.event_link as event_link,
+					e.event_loc as event_loc,
+					e.event_desc as event_desc,
+					e.event_start_time as event_start_time,
+					e.event_end_time as event_end_time";
+		
+		// Check if the format contains the author variable to decide whether to do the join or not
+		$needuserjoin = false;
+		if(strpos($event_format, "%AUTHOR%") > -1) {
+			$sql .= ", u.display_name as event_author";
+			$needuserjoin = true;
+		}
+		
+		$sql .= " FROM $tbl_name e";
+		
+		if($needuserjoin) {
+			$sql .= ", $wpdb->users u";
+		}
+		
 		if(!$show_past_events) {
-			$sql .= " WHERE event_end_time >= ".time();
+			$sql .= " WHERE e.event_end_time >= ".time();
 			$whered = true;
 		}
 		if($advance_days > -1) {
-			if($whered)
+			if($whered) {
 				$sql .= " AND ";
-			else
+			}
+			else {
 				$sql .= " WHERE ";
+				$whered = true;
+			}
 			
-			$sql .= "event_start_time < ".(time() + ($advance_days * 3600 * 24));
+			$sql .= "e.event_start_time < ".(time() + ($advance_days * 3600 * 24));
+		}
+		if($needuserjoin) {
+			if($whered) {
+				$sql .= " AND ";
+			}
+			else {
+				$sql .= " WHERE ";
+				$whered = true;
+			}
+			
+			$sql .= "e.event_author = u.ID";
 		}
 		
 		if($event_order == "asc") {
@@ -219,7 +267,7 @@ if(!$wplc_is_included) {
 			$order = "DESC";
 		}
 		
-		$sql .= " ORDER BY event_start_time ".$order.", event_end_time ".$order;
+		$sql .= " ORDER BY e.event_start_time ".$order.", e.event_end_time ".$order;
 		
 		if($max_events > -1)
 			$sql .= " LIMIT ".$max_events;
@@ -254,6 +302,7 @@ if(!$wplc_is_included) {
 			$target = get_option("wplc_open_links_in_new_window") == "true" ? " target='_blank'" : "";
 			$nofollow = get_option("wplc_nofollow_links") == "true" ? " rel='nofollow'" : "";
 			$linked_name = empty($cleaned_link) ? $cleaned_name : "<a href='".$cleaned_link."'".$target.$nofollow.">".$cleaned_name."</a>";
+			$cleaned_author = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_author']))));
 		
 			if($display_mode == "list") {
 				$evt = str_replace("%NAME%", $cleaned_name, $event_format);
@@ -264,6 +313,7 @@ if(!$wplc_is_included) {
 				$evt = str_replace("%START%", $start, $evt);
 				$evt = str_replace("%END%", $end, $evt);
 				$evt = str_replace("%ID%", $events[$i]['id'], $evt);
+				$evt = str_replace("%AUTHOR%", $cleaned_author, $evt);
 				$ret .= "<li".(($i % 2 == 1) ? " class='wplc_alt'" : "").">".$evt."</li>";
 			}
 			elseif($display_mode == "table") {

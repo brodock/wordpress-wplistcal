@@ -28,7 +28,6 @@ DEALINGS IN THE SOFTWARE.
 add_action( 'admin_head', 'wplc_editor_init' );
 function wplc_editor_init() {
 	wp_admin_css('thickbox');
-	wp_print_scripts('post');
 	wp_print_scripts('editor');
 	add_thickbox();
 	wp_print_scripts('media-upload');
@@ -83,6 +82,20 @@ function wplc_show_event_form($event=array(), $message=null) {
 	get_currentuserinfo();
 	global $user_ID;
 	
+	if($editing) {
+		$time_format = "M j, Y @ ";
+		
+		if($use_24hr_time) {
+			$time_format .= "G:i";
+		}
+		else {
+			$time_format .= "g:ia";
+		}
+		
+		$create_time = date($time_format, $event['event_create_time']);
+		$modified_time = date($time_format, $event['event_modified_time']);
+	}
+	
 	if(!is_null($message)) {
 	?>
 		<div id="message" class="updated fade">
@@ -107,20 +120,41 @@ function wplc_show_event_form($event=array(), $message=null) {
 							<div class="inside">
 								<div class="submitbox">
 									<div id="minor-publishing">
-										&nbsp;
+										<?php if($editing) { ?>
+											<div class="misc-pub-section">
+												<label><?php _e("Author:", $wplc_domain); ?></label>
+												<b><?php echo $event['event_author']; ?></b>
+											</div>
+											<div class="misc-pub-section">
+												<label><?php _e("Published on:", $wplc_domain); ?></label>
+												<b><?php echo $create_time; ?></b>
+											</div>
+											<?php if($create_time != $modified_time) { ?>
+												<div class="misc-pub-section">
+													<label><?php _e("Modified on:", $wplc_domain); ?></label>
+													<b><?php echo $modified_time; ?></b>
+												</div>
+											<?php } ?>
+											<div class="misc-pub-section misc-pub-section-last">
+												<?php
+												if($editing) {
+													$dellink = "admin.php?page=wplc-edit&op=delete&id=".$event['id'];
+													$dellink = (function_exists('wp_nonce_url')) ? wp_nonce_url($dellink, 'wplc-delete-event') : $dellink;
+													echo "<a class='submitdelete' href='".$dellink."' onclick=\"if(confirm('".__('You are about to delete this event \\\''.stripslashes($event['event_name']).'\\\'\n \\\'Cancel\\\' to stop, \\\'OK\\\' to delete.', $wplc_domain)."')) { return true; } return false;\">".__("Delete Event", $wplc_domain)."</a>";
+												}
+												?>
+											</div>
+										<?php }
+										else {
+											echo "&nbsp;";
+										} ?>
 									</div>
 									<div id="major-publishing-actions">
 										<div id="delete-action">
-											<?php
-											if($editing) {
-												$dellink = "admin.php?page=wplc-edit&op=delete&id=".$event['id'];
-												$dellink = (function_exists('wp_nonce_url')) ? wp_nonce_url($dellink, 'wplc-delete-event') : $dellink;
-												echo "<a class='submitdelete' href='".$dellink."' onclick=\"if(confirm('".__('You are about to delete this event \\\''.stripslashes($event['event_name']).'\\\'\n \\\'Cancel\\\' to stop, \\\'OK\\\' to delete.', $wplc_domain)."')) { return true; } return false;\">".__("Delete Event", $wplc_domain)."</a>";
-											}
-											?>
+											<input type="submit" name="saveandnew" id="save-new-post" value="<?php _e('Save and new', $wplc_domain); ?>" tabindex="16" class="button" />
 										</div>
 										<div id="publishing-action">
-											<input type="submit" name="save" id="save-post" value="<?php _e('Save', $wplc_domain); ?>" tabindex="15" class="button-primary" />
+											<input type="submit" name="save" id="save-post" value="<?php _e('Save', $wplc_domain); ?>" tabindex="17" class="button-primary" />
 										</div>
 										<div class="clear"></div>
 									</div>
@@ -264,7 +298,8 @@ function wplc_show_event_form($event=array(), $message=null) {
 
 function wplc_process_event($postvars) {
 	wplc_setup();
-	global $wplc_domain, $wpdb;
+	global $wplc_domain, $wpdb, $current_user;
+	get_currentuserinfo();
 
 	$gobacktoeditform = !empty($postvars['save']);
 
@@ -290,6 +325,9 @@ function wplc_process_event($postvars) {
 				$postvars['end-ampm'];
 	$start = strtotime($startstr);
 	$end = strtotime($endstr);
+	
+	$author = $current_user->ID;
+	$create_mod_time = time();
 
 	// Validation & Error Handling
 	// If name is empty, just refresh the post page
@@ -308,15 +346,19 @@ function wplc_process_event($postvars) {
 		$end = $start;
 	
 	// Add data to db
+	$wpdb->show_errors();
 	if(empty($postvars['id'])) {
 		$insert = "INSERT INTO ".$tbl_name.
-				  " (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time) ".
+				  " (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time, event_author, event_create_time, event_modified_time) ".
 				  "VALUES('".$wpdb->escape($name)."',
 						  '".$wpdb->escape($link)."',
 						  '".$wpdb->escape($location)."',
 						  '".$wpdb->escape($description)."',
 						  '".$wpdb->escape($start)."',
-						  '".$wpdb->escape($end)."');";
+						  '".$wpdb->escape($end)."',
+						  '".$wpdb->escape($author)."',
+						  '".$wpdb->escape($create_mod_time)."',
+						  '".$wpdb->escape($create_mod_time)."');";
 		$results = $wpdb->query($insert);
 	}
 	else {
@@ -326,7 +368,8 @@ function wplc_process_event($postvars) {
 				  "event_loc='".$wpdb->escape($location)."',".
 				  "event_desc='".$wpdb->escape($description)."',".
 				  "event_start_time='".$wpdb->escape($start)."',".
-				  "event_end_time='".$wpdb->escape($end)."' ".
+				  "event_end_time='".$wpdb->escape($end)."',".
+				  "event_modified_time='".$wpdb->escape($create_mod_time)."' ".
 				  "WHERE id=".$wpdb->escape($postvars['id']);
 		$results = $wpdb->query($update);
 	}
@@ -335,7 +378,7 @@ function wplc_process_event($postvars) {
 	
 	if($gobacktoeditform) {
 		$id = empty($postvars['id']) ? $wpdb->insert_id : $postvars['id'];
-		$sql = "SELECT * FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." WHERE id=".$wpdb->escape($id);
+		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e, ".$wpdb->users." u WHERE e.id=".$wpdb->escape($id)." AND e.event_author = u.ID";
 		$event = $wpdb->get_results($sql, ARRAY_A);
 
 		// Show edit form
@@ -366,12 +409,12 @@ function wplc_show_admin_write_page() {
 add_action('admin_menu', 'wplc_add_admin_pages');
 function wplc_add_admin_pages() {
 	wplc_setup();
-	global $wplc_domain, $wplc_dir;
+	global $wplc_domain, $wplc_dir, $wplc_plugin;
 	
-	add_object_page(__("Events"), __("Events"), 2, __FILE__, "wplc_show_admin_write_page", $wplc_dir."/icon.gif");
+	add_object_page(__("Events"), __("Events"), 2, $wplc_plugin, "wplc_show_admin_write_page", $wplc_dir."/icon.gif");
 	
-	add_submenu_page(__FILE__, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), 2, __FILE__, "wplc_show_admin_write_page");
-	add_submenu_page(__FILE__, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), 2, "wplc-edit", "wplc_show_admin_manage_page");
+	add_submenu_page($wplc_plugin, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), 2, $wplc_plugin, "wplc_show_admin_write_page");
+	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), 2, "wplc-edit", "wplc_show_admin_manage_page");
 	
 	get_currentuserinfo();
 	global $user_level;
@@ -489,12 +532,13 @@ function wplc_show_admin_manage_page() {
 	?>
 	
 	<div class="wrap">
-		<h2><?php _e("Events", $wplc_domain); ?></h2>
+		<h2><?php _e("Edit Events", $wplc_domain); ?></h2>
 		<div class="tablenav">
 			<div class="tablenav-pages">
+				<span class="displaying-num"><?php _e(sprintf("Displaying %d-%d of %d", $offset+1, $offset+count($events), $totalevents), $wplc_domain); ?></span>
 				<?php
 				if($offset + $itemsperpage < $totalevents) {
-					echo "<a href='admin.php?wplc_pg=".($page+1)."&amp;page=wplc-edit'>";
+					echo "<a href='admin.php?wplc_pg=".($page+1)."&amp;page=wplc-edit' class='prev page-numbers'>";
 					_e("&laquo; Previous Events", $wplc_domain);
 					echo "</a>";
 					$prevshown = true;
@@ -502,21 +546,20 @@ function wplc_show_admin_manage_page() {
 				if($page > 1) {
 					if($prevshown)
 						echo " | ";
-					echo "<a href='admin.php?wplc_pg=".($page-1)."&amp;page=wplc-edit'>";
+					echo "<a href='admin.php?wplc_pg=".($page-1)."&amp;page=wplc-edit' class='next page-numbers'>";
 					_e("Next Events &raquo;", $wplc_domain);
 					echo "</a>";
 				}
 				?>
 			</div>
-			<div class="alignleft" style="margin-top:3px;">
+			<div class="alignleft">
 				<a href="admin.php?page=<?php echo $wplc_plugin; ?>"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
 			</div>
 		</div>
-		<br class="clear" />
 		<table class="widefat">
 			<thead>
 				<tr>
-					<th scope="col" style="text-align:center;"><?php _e("ID", $wplc_domain); ?></th>
+					<th scope="col" style="text-align:center;"><span class="hidden"><?php _e("ID", $wplc_domain); ?></span></th>
 					<th scope="col"><?php _e("Event Name", $wplc_domain); ?></th>
 					<th scope="col"><?php _e("Location", $wplc_domain); ?></th>
 					<th scope="col"><?php _e("Start Date/Time", $wplc_domain); ?></th>
@@ -547,12 +590,22 @@ function wplc_show_admin_manage_page() {
 			?>
 	
 			</tbody>
+			<tfoot>
+				<tr>
+					<th scope="col" style="text-align:center;"><span class="hidden"><?php _e("ID", $wplc_domain); ?></span></th>
+					<th scope="col"><?php _e("Event Name", $wplc_domain); ?></th>
+					<th scope="col"><?php _e("Location", $wplc_domain); ?></th>
+					<th scope="col"><?php _e("Start Date/Time", $wplc_domain); ?></th>
+					<th scope="col"><?php _e("End Date/Time", $wplc_domain); ?></th>
+				</tr>
+			</tfoot>			
 		</table>
 		<div class="tablenav">
 			<div class="tablenav-pages">
+				<span class="displaying-num"><?php _e(sprintf("Displaying %d-%d of %d", $offset+1, $offset+count($events), $totalevents), $wplc_domain); ?></span>
 				<?php
 				if($offset + $itemsperpage < $totalevents) {
-					echo "<a href='admin.php?wplc_pg=".($page+1)."&amp;page=wplc-edit'>";
+					echo "<a href='admin.php?wplc_pg=".($page+1)."&amp;page=wplc-edit' class='prev page-numbers'>";
 					_e("&laquo; Previous Events", $wplc_domain);
 					echo "</a>";
 					$prevshown = true;
@@ -560,13 +613,13 @@ function wplc_show_admin_manage_page() {
 				if($page > 1) {
 					if($prevshown)
 						echo " | ";
-					echo "<a href='admin.php?wplc_pg=".($page-1)."&amp;page=wplc-edit'>";
+					echo "<a href='admin.php?wplc_pg=".($page-1)."&amp;page=wplc-edit' class='next page-numbers'>";
 					_e("Next Events &raquo;", $wplc_domain);
 					echo "</a>";
 				}
 				?>
 			</div>
-			<div class="alignleft" style="margin-top:3px;">
+			<div class="alignleft" style="margin-top:6px;">
 				<a href="admin.php?page=<?php echo $wplc_plugin; ?>"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
 			</div>
 		</div>
@@ -585,7 +638,7 @@ function wplc_show_admin_edit_page($id) {
 	}
 	else {
 		// Lookup event data for $id
-		$sql = "SELECT * FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." WHERE id=".$wpdb->escape($id);
+		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e, ".$wpdb->users." u WHERE id=".$wpdb->escape($id)." AND e.event_author = u.ID";
 		$event = $wpdb->get_results($sql, ARRAY_A);
 
 		// Show edit form

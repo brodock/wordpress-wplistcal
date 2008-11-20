@@ -1,0 +1,4 @@
+- Make it so {text %START% word} only prints 'text' and 'word' if %START% is not empty
+- All day events
+
+TODO: Probably need to check the SQL queries and perhaps use left joins instead of normal implicit joins.  See delete case.
