@@ -93,6 +93,10 @@ Download WPListCal 1.0.3 or later.
 
 Download WPListCal 1.0.4 or later.
 
+= Why do some of my events show N/A for author and create date? =
+
+Events created before upgrading to version 1.1 did not have those values set, therefore WPListCal marks them as N/A.
+
 = I love WPListCal, but I'd like it to do &lt;blank&gt;. =
 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
@@ -107,6 +111,7 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 * Added a location field
 * Added widget support
 * Refactored code into separate files
+* Fixed a non-localizable string literal in the options page
 
 = 1.0.8.2 (current stable) =
 

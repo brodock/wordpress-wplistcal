@@ -92,8 +92,25 @@ function wplc_show_event_form($event=array(), $message=null) {
 			$time_format .= "g:ia";
 		}
 		
-		$create_time = date($time_format, $event['event_create_time']);
-		$modified_time = date($time_format, $event['event_modified_time']);
+		if($event['event_create_time'] == '0') {
+			$create_time = __("N/A", $wplc_domain);
+		}
+		else {
+			$create_time = date($time_format, $event['event_create_time']);
+		}
+		if($event['event_modified_time'] == '0') {
+			$modified_time = __("N/A", $wplc_domain);
+		}
+		else {
+			$modified_time = date($time_format, $event['event_modified_time']);
+		}
+		
+		if($event['event_author'] == null) {
+			$author = __("N/A", $wplc_domain);
+		}
+		else {
+			$author = $event['event_author'];
+		}
 	}
 	
 	if(!is_null($message)) {
@@ -123,7 +140,7 @@ function wplc_show_event_form($event=array(), $message=null) {
 										<?php if($editing) { ?>
 											<div class="misc-pub-section">
 												<label><?php _e("Author:", $wplc_domain); ?></label>
-												<b><?php echo $event['event_author']; ?></b>
+												<b><?php echo $author; ?></b>
 											</div>
 											<div class="misc-pub-section">
 												<label><?php _e("Published on:", $wplc_domain); ?></label>
@@ -346,7 +363,6 @@ function wplc_process_event($postvars) {
 		$end = $start;
 	
 	// Add data to db
-	$wpdb->show_errors();
 	if(empty($postvars['id'])) {
 		$insert = "INSERT INTO ".$tbl_name.
 				  " (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time, event_author, event_create_time, event_modified_time) ".
@@ -378,7 +394,7 @@ function wplc_process_event($postvars) {
 	
 	if($gobacktoeditform) {
 		$id = empty($postvars['id']) ? $wpdb->insert_id : $postvars['id'];
-		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e, ".$wpdb->users." u WHERE e.id=".$wpdb->escape($id)." AND e.event_author = u.ID";
+		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e LEFT JOIN ".$wpdb->users." u ON e.event_author = u.ID WHERE e.id=".$wpdb->escape($id);
 		$event = $wpdb->get_results($sql, ARRAY_A);
 
 		// Show edit form
@@ -638,7 +654,7 @@ function wplc_show_admin_edit_page($id) {
 	}
 	else {
 		// Lookup event data for $id
-		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e, ".$wpdb->users." u WHERE id=".$wpdb->escape($id)." AND e.event_author = u.ID";
+		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e LEFT JOIN  ".$wpdb->users." u ON e.event_author = u.ID WHERE e.id=".$wpdb->escape($id);
 		$event = $wpdb->get_results($sql, ARRAY_A);
 
 		// Show edit form
@@ -695,9 +711,10 @@ function wplc_show_admin_options_page() {
 				<tr valign="top" id="dateformat">
 					<th scope="row"><?php _e("Date/Time Format:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" /><br />
-						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), time()); ?><br />
-						<a href="http://codex.wordpress.org/Formatting_Date_and_Time">Documentation on date formatting.</a> Click &quot;Update Options&quot; to update sample output.
+						<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" />
+						<span class="setting-description"><a href="http://codex.wordpress.org/Formatting_Date_and_Time"><?php _e("Documentation on date formatting", $wplc_domain); ?></a>. <?php _e("Click &quot;Update Options&quot; to update sample output.", $wplc_domain); ?></span>
+						<br />
+						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), time()); ?>
 					</td>
 				</tr>
 				<tr valign="top" id="24hr_time">
@@ -709,7 +726,7 @@ function wplc_show_admin_options_page() {
 						<input type="radio" name="wplc_use_24hr_time" id="wplc_use_24hr_time1" value="true"<?php echo $use_24hr_time ? ' checked=\'checked\'' : ''; ?> />
 						<label for="wplc_use_24hr_time1"><?php _e("Use 24 hour time (e.g. 13:35)", $wplc_domain); ?></label>
 						<br />
-						<?php _e("What time-style to use in the admin area (does not affect what is displayed on your site)", $wplc_domain); ?>
+						<span class="setting-description"><?php _e("What time-style to use in the admin area (does not affect what is displayed on your site)", $wplc_domain); ?></span>
 					</td>
 				</tr>
 				<tr valign="top" id="hide_same_date">
@@ -731,15 +748,15 @@ function wplc_show_admin_options_page() {
 				<tr valign="top" id="maxevents">
 					<th scope="row"><?php _e("Maximum Displayed Events:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_max_events" size="4" value="<?php echo get_option('wplc_max_events'); ?>" /><br />
-						<?php _e("How many events to display in the event list, -1 for no limit", $wplc_domain); ?>
+						<input type="text" name="wplc_max_events" size="4" value="<?php echo get_option('wplc_max_events'); ?>" />
+						<span class="setting-description"><?php _e("How many events to display in the event list, -1 for no limit", $wplc_domain); ?></span>
 					</td>
 				</tr>
 				<tr valign="top" id="advancenotice">
 					<th scope="row"><?php _e("Maximum Advanced Notice:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_advance_days" size="4" value="<?php echo get_option('wplc_advance_days'); ?>" /><br />
-						<?php _e("How many days in advance to display events, -1 for no limit", $wplc_domain); ?>
+						<input type="text" name="wplc_advance_days" size="4" value="<?php echo get_option('wplc_advance_days'); ?>" />
+						<span class="setting-description"><?php _e("How many days in advance to display events, -1 for no limit", $wplc_domain); ?></span>
 					</td>
 				</tr>
 				<tr valign="top" id="showpastevents">
@@ -765,15 +782,15 @@ function wplc_show_admin_options_page() {
 				<tr valign="top" id="no_events_msg">
 					<th scope="row"><?php _e("No Events Message:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_no_events_msg" size="30" value="<?php echo get_option('wplc_no_events_msg'); ?>" /><br />
-						<?php _e("Message to show if there are no events, leave blank for none", $wplc_domain); ?>
+						<input type="text" name="wplc_no_events_msg" size="30" value="<?php echo get_option('wplc_no_events_msg'); ?>" />
+						<span class="setting-description"><?php _e("Message to show if there are no events, leave blank for none", $wplc_domain); ?></span>
 					</td>
 				</tr>
 				<tr valign="top" id="adminperpage">
 					<th scope="row"><?php _e("Admin Items Per Page:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_manage_items_per_page" size="4" value="<?php echo get_option('wplc_manage_items_per_page'); ?>" /><br />
-						<?php _e("How many events to display per page on the Manage Events admin page", $wplc_domain); ?>
+						<input type="text" name="wplc_manage_items_per_page" size="4" value="<?php echo get_option('wplc_manage_items_per_page'); ?>" />
+						<span class="setting-description"><?php _e("How many events to display per page on the Manage Events admin page", $wplc_domain); ?></span>
 					</td>
 				</tr>
 				<tr valign="top" id="open_links_in_new_window">

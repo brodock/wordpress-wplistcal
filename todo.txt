@@ -1,4 +1,5 @@
 - Make it so {text %START% word} only prints 'text' and 'word' if %START% is not empty
 - All day events
-
-TODO: Probably need to check the SQL queries and perhaps use left joins instead of normal implicit joins.  See delete case.
+- Change internal representation of dates to support dates > 2038
+	- Probably use something like D203809121704 (DYYYYMMDDHHMM) using the D to switch parsers accordingly
+	- Will need to ensure that converting the column from BIGINT to VARCHAR(13) is safe, otherwise, use a converter in upgrade

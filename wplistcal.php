@@ -230,7 +230,7 @@ if(!$wplc_is_included) {
 		$sql .= " FROM $tbl_name e";
 		
 		if($needuserjoin) {
-			$sql .= ", $wpdb->users u";
+			$sql .= " LEFT JOIN $wpdb->users u ON e.event_author = u.ID";
 		}
 		
 		if(!$show_past_events) {
@@ -248,17 +248,6 @@ if(!$wplc_is_included) {
 			
 			$sql .= "e.event_start_time < ".(time() + ($advance_days * 3600 * 24));
 		}
-		if($needuserjoin) {
-			if($whered) {
-				$sql .= " AND ";
-			}
-			else {
-				$sql .= " WHERE ";
-				$whered = true;
-			}
-			
-			$sql .= "e.event_author = u.ID";
-		}
 		
 		if($event_order == "asc") {
 			$order = "ASC";
@@ -271,7 +260,6 @@ if(!$wplc_is_included) {
 		
 		if($max_events > -1)
 			$sql .= " LIMIT ".$max_events;
-		
 		$events = $wpdb->get_results($wpdb->escape($sql), ARRAY_A);
 		
 		if(!empty($no_events_msg) && count($events) == 0) {
@@ -302,7 +290,7 @@ if(!$wplc_is_included) {
 			$target = get_option("wplc_open_links_in_new_window") == "true" ? " target='_blank'" : "";
 			$nofollow = get_option("wplc_nofollow_links") == "true" ? " rel='nofollow'" : "";
 			$linked_name = empty($cleaned_link) ? $cleaned_name : "<a href='".$cleaned_link."'".$target.$nofollow.">".$cleaned_name."</a>";
-			$cleaned_author = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_author']))));
+			$cleaned_author = is_null($events[$i]['event_author']) ? __("N/A", $wplc_domain) : str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_author']))));
 		
 			if($display_mode == "list") {
 				$evt = str_replace("%NAME%", $cleaned_name, $event_format);
