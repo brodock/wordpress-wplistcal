@@ -97,6 +97,10 @@ Download WPListCal 1.0.4 or later.
 
 Events created before upgrading to version 1.1 did not have those values set, therefore WPListCal marks them as N/A.
 
+= I am unable to make events that start or end past January 19, 2038 at 3:14:08am =
+
+This is a known bug in PHP ([44209](http://bugs.php.net/44209)) and was fixed in version 5.2.6. The specific issue was that strtotime() did not support 64-bit timestamps.
+
 = I love WPListCal, but I'd like it to do &lt;blank&gt;. =
 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").

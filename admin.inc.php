@@ -409,11 +409,6 @@ function wplc_show_admin_write_page() {
 	wplc_setup();
 	global $wplc_domain;
 
-	if(isset($_GET['id'])) {
-		wplc_show_admin_edit_page($_GET['id']);
-		return;
-	}
-
 	$action = $_POST['action'];
 	if($action == "submitted") {
 		wplc_process_event($_POST);
@@ -487,6 +482,11 @@ function wplc_show_admin_manage_page() {
 	
 	if($_POST['action'] == "delete") {
 		wplc_delete_event($_POST['id']);
+		return;
+	}
+	
+	if($_GET['op'] == 'edit' && isset($_GET['id'])) {
+		wplc_show_admin_edit_page($_GET['id']);
 		return;
 	}
 	
@@ -593,8 +593,8 @@ function wplc_show_admin_manage_page() {
 
 				<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
 					<th scope="row" style="text-align:center;" class="check-column"><?php echo $events[$i]['id']; ?></th>
-					<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=<?php echo $wplc_plugin; ?>" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a><br />
-						<a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=<?php echo $wplc_plugin; ?>" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="wplc_delete"><?php _e("Delete", $wplc_domain); ?></a>
+					<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a><br />
+						<a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="wplc_delete"><?php _e("Delete", $wplc_domain); ?></a>
 					</td>
 					<td><?php echo stripslashes(stripslashes($events[$i]['event_loc'])); ?></td>
 					<td><?php echo $start; ?></td>
@@ -699,9 +699,9 @@ function wplc_show_admin_options_page() {
 							<label for="wplc_display_mode_list"><?php _e("Show events in an unordered list <em>(Default)</em>", $wplc_domain); ?></label>
 						<br />
 						<fieldset style="margin-left: 25px;border:none;">
-							<legend style="float:left; margin-top:2px;"><?php _e("Event Format", $wplc_domain); ?> <a href="javascript:;" title="<?php _e("The following variables are available: %NAME%, %LINK%, %LINKEDNAME%, %START%, %END%, %DESCRIPTION%", $wplc_domain); ?>" style="cursor:help;">?</a>:</legend>
+							<legend style="float:left; margin-top:2px;"><?php _e("Event Format", $wplc_domain); ?> <a href="javascript:;" title="<?php _e("The following variables are available:", $wplc_domain); ?> %NAME%, %LINK%, %LINKEDNAME%, %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR%" style="cursor:help;">?</a>:</legend>
 							<div>
-								<textarea name="wplc_event_format" id="wplc_event_format" style="width:350px; height:50px;"<?php echo get_option('wplc_display_mode') == 'list' ? "" : "disabled='disabled'"; ?>><?php echo htmlentities(get_option('wplc_event_format')); ?></textarea>
+								<textarea name="wplc_event_format" id="wplc_event_format" style="width:350px; height:50px;" class="large-text code"<?php echo get_option('wplc_display_mode') == 'list' ? "" : "disabled='disabled'"; ?>><?php echo htmlentities(get_option('wplc_event_format')); ?></textarea>
 							</div>
 						</fieldset>
 						<input type="radio" name="wplc_display_mode" value="table" id="wplc_display_mode_table" onclick="wplc_changeDisabled('wplc_event_format', true);"<?php echo get_option('wplc_display_mode') == 'table' ? "checked='checked'" : ""; ?> />
@@ -711,7 +711,7 @@ function wplc_show_admin_options_page() {
 				<tr valign="top" id="dateformat">
 					<th scope="row"><?php _e("Date/Time Format:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" />
+						<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" class="regular-text" />
 						<span class="setting-description"><a href="http://codex.wordpress.org/Formatting_Date_and_Time"><?php _e("Documentation on date formatting", $wplc_domain); ?></a>. <?php _e("Click &quot;Update Options&quot; to update sample output.", $wplc_domain); ?></span>
 						<br />
 						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), time()); ?>
@@ -738,7 +738,7 @@ function wplc_show_admin_options_page() {
 						<fieldset style="margin-left: 25px;border:none;">
 							<legend style="float:left; margin-top:2px;"><?php _e("End Date Format", $wplc_domain); ?>:</legend>
 							<div>
-								<input type="text" name="wplc_date2_time_format" id="wplc_date2_time_format" value="<?php echo get_option('wplc_date2_time_format'); ?>"<?php echo $hide_same_date ? "" : "disabled='disabled'"; ?> />
+								<input type="text" name="wplc_date2_time_format" id="wplc_date2_time_format" value="<?php echo get_option('wplc_date2_time_format'); ?>"<?php echo $hide_same_date ? "" : "disabled='disabled'"; ?> class="small-text" />
 							</div>
 						</fieldset>
 						<input type="radio" name="wplc_hide_same_date" value="false" id="wplc_hide_same_date_false" onclick="wplc_changeDisabled('wplc_date2_time_format', true);"<?php echo $hide_same_date ? "" : "checked='checked'"; ?> />
@@ -748,14 +748,14 @@ function wplc_show_admin_options_page() {
 				<tr valign="top" id="maxevents">
 					<th scope="row"><?php _e("Maximum Displayed Events:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_max_events" size="4" value="<?php echo get_option('wplc_max_events'); ?>" />
+						<input type="text" name="wplc_max_events" size="4" value="<?php echo get_option('wplc_max_events'); ?>" class="small-text" />
 						<span class="setting-description"><?php _e("How many events to display in the event list, -1 for no limit", $wplc_domain); ?></span>
 					</td>
 				</tr>
 				<tr valign="top" id="advancenotice">
 					<th scope="row"><?php _e("Maximum Advanced Notice:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_advance_days" size="4" value="<?php echo get_option('wplc_advance_days'); ?>" />
+						<input type="text" name="wplc_advance_days" size="4" value="<?php echo get_option('wplc_advance_days'); ?>" class="small-text" />
 						<span class="setting-description"><?php _e("How many days in advance to display events, -1 for no limit", $wplc_domain); ?></span>
 					</td>
 				</tr>
@@ -782,14 +782,14 @@ function wplc_show_admin_options_page() {
 				<tr valign="top" id="no_events_msg">
 					<th scope="row"><?php _e("No Events Message:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_no_events_msg" size="30" value="<?php echo get_option('wplc_no_events_msg'); ?>" />
+						<input type="text" name="wplc_no_events_msg" size="30" value="<?php echo get_option('wplc_no_events_msg'); ?>" class="regular-text" />
 						<span class="setting-description"><?php _e("Message to show if there are no events, leave blank for none", $wplc_domain); ?></span>
 					</td>
 				</tr>
 				<tr valign="top" id="adminperpage">
 					<th scope="row"><?php _e("Admin Items Per Page:", $wplc_domain); ?></th>
 					<td>
-						<input type="text" name="wplc_manage_items_per_page" size="4" value="<?php echo get_option('wplc_manage_items_per_page'); ?>" />
+						<input type="text" name="wplc_manage_items_per_page" size="4" value="<?php echo get_option('wplc_manage_items_per_page'); ?>" class="small-text" />
 						<span class="setting-description"><?php _e("How many events to display per page on the Manage Events admin page", $wplc_domain); ?></span>
 					</td>
 				</tr>
