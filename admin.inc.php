@@ -426,6 +426,8 @@ function wplc_add_admin_pages() {
 	
 	add_submenu_page($wplc_plugin, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), 2, $wplc_plugin, "wplc_show_admin_write_page");
 	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), 2, "wplc-edit", "wplc_show_admin_manage_page");
+	add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), 2, "wplc-import", "wplc_show_import_page");
+	add_submenu_page($wplc_plugin, __("Export Events", $wplc_domain), __("Export", $wplc_domain), 2, "wplc-export", "wplc_show_export_page");
 	
 	get_currentuserinfo();
 	global $user_level;
@@ -659,6 +661,30 @@ function wplc_show_admin_edit_page($id) {
 
 		// Show edit form
 		wplc_show_event_form($event[0]);
+	}
+}
+
+function wplc_show_import_page() {
+	// TODO: Implement this
+	echo "Not yet implemented";
+}
+
+function wplc_show_export_page() {
+	wplc_setup();
+	global $wplc_domain;
+	
+	?>
+	<div class="wrap">
+		<h2><?php _e("Export Events", $wplc_domain); ?></h2>
+		<p>
+			<?php _e("WPListCal can save your events in the standard iCalendar format. Events are stored in the timezone that your blog is set to use. All events are exported at once, past and future. If you'd like to export a single event, go to the manage events page and click &quot;Export&quot; near the event you want to export.", $wplc_domain); ?>
+		</p>
+		<h3><a href="admin.php?page=wplc-export&amp;op=export"><?php _e("Export events &raquo;", $wplc_domain); ?></a></h3>
+	</div>
+	<?php
+	
+	if($_GET['op'] == "export") {
+		wplc_export_events();
 	}
 }
 

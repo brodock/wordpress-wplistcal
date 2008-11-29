@@ -133,6 +133,8 @@ if(!$wplc_is_included) {
 		add_option("wplc_no_events_msg", "");
 		add_option("wplc_widget_title", __("Upcoming Events", $wplc_domain));
 		
+		wplc_init_upload_dir_settings();
+		
 		wplc_upgrade_if_needed();
 	}
 
@@ -162,6 +164,27 @@ if(!$wplc_is_included) {
 			
 			update_option("wplc_db_version", WPLC_DB_VERSION);
 		}
+	}
+	
+	function wplc_init_upload_dir_settings() {
+		$siteurl = get_option('siteurl');
+		$upload_path = get_option('upload_path');
+		if (trim($upload_path) === '')
+			$upload_path = 'wp-content/uploads';
+		$dir = $upload_path;
+		$dir = path_join(ABSPATH, $upload_path);
+		$path = str_replace(ABSPATH, '', trim($upload_path));
+		if (!$url = get_option('upload_url_path'))
+			$url = trailingslashit($siteurl).$path;
+		if(defined('UPLOADS')) {
+			$dir = ABSPATH . UPLOADS;
+			$url = trailingslashit($siteurl).UPLOADS;
+		}
+		$dir = trailingslashit($dir);
+		$url = trailingslashit($url);
+		
+		add_option("wplc_upload_dir", $dir);
+		add_option("wplc_upload_url", $url);
 	}
 
 	// Show the event list
@@ -331,5 +354,6 @@ if(!$wplc_is_included) {
 	
 	require_once("utility.inc.php");
 	require_once("admin.inc.php");
+	require_once("importexport.inc.php");
 }
 ?>
