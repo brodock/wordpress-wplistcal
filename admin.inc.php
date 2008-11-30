@@ -37,7 +37,7 @@ function wplc_editor_init() {
 	if(function_exists('wp_tiny_mce')) wp_tiny_mce();
 }
 
-function wplc_show_event_form($event=array(), $message=null) {
+function wplc_show_event_form($event=array(), $message=null, $export=false) {
 	wplc_setup();
 	global $wplc_domain;
 	
@@ -158,6 +158,9 @@ function wplc_show_event_form($event=array(), $message=null) {
 													$dellink = "admin.php?page=wplc-edit&op=delete&id=".$event['id'];
 													$dellink = (function_exists('wp_nonce_url')) ? wp_nonce_url($dellink, 'wplc-delete-event') : $dellink;
 													echo "<a class='submitdelete' href='".$dellink."' onclick=\"if(confirm('".__('You are about to delete this event \\\''.stripslashes($event['event_name']).'\\\'\n \\\'Cancel\\\' to stop, \\\'OK\\\' to delete.', $wplc_domain)."')) { return true; } return false;\">".__("Delete Event", $wplc_domain)."</a>";
+													?> | 
+													<a class='wplc_link' href="admin.php?page=wplc-edit&amp;op=editexport&amp;id=<?php echo $event['id']; ?>"><?php _e("Export", $wplc_domain); ?></a>
+													<?php
 												}
 												?>
 											</div>
@@ -311,6 +314,10 @@ function wplc_show_event_form($event=array(), $message=null) {
 	//]]>
 	</script>
 	<?php
+	
+	if($export) {
+		wplc_export_events($event['id']);
+	}
 }
 
 function wplc_process_event($postvars) {
@@ -487,8 +494,8 @@ function wplc_show_admin_manage_page() {
 		return;
 	}
 	
-	if($_GET['op'] == 'edit' && isset($_GET['id'])) {
-		wplc_show_admin_edit_page($_GET['id']);
+	if(($_GET['op'] == 'edit' || $_GET['op'] == 'editexport') && isset($_GET['id'])) {
+		wplc_show_admin_edit_page($_GET['id'], $_GET['op'] == 'editexport');
 		return;
 	}
 	
@@ -502,6 +509,8 @@ function wplc_show_admin_manage_page() {
 		// Set message
 		$message = __("Event deleted", $wplc_domain);
 	}
+	
+	// op == export on bottom of function
 
 	$itemsperpage = get_option("wplc_manage_items_per_page");
 	$page = $_GET['wplc_pg'];
@@ -596,7 +605,7 @@ function wplc_show_admin_manage_page() {
 				<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
 					<th scope="row" style="text-align:center;" class="check-column"><?php echo $events[$i]['id']; ?></th>
 					<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a><br />
-						<a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="wplc_delete"><?php _e("Delete", $wplc_domain); ?></a>
+						<a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="submitdelete"><?php _e("Delete", $wplc_domain); ?></a> | <a href="admin.php?page=wplc-edit&amp;op=export&amp;id=<?php echo $events[$i]['id']; ?>"><?php _e("Export", $wplc_domain); ?></a>
 					</td>
 					<td><?php echo stripslashes(stripslashes($events[$i]['event_loc'])); ?></td>
 					<td><?php echo $start; ?></td>
@@ -644,9 +653,15 @@ function wplc_show_admin_manage_page() {
 		<br class="clear" />
 	</div>
 	<?php
+	
+	if($_GET['op'] == "export") {
+		if(!empty($_GET['id'])) {
+			wplc_export_events($_GET['id']);
+		}
+	}
 }
 
-function wplc_show_admin_edit_page($id) {
+function wplc_show_admin_edit_page($id, $export=false) {
 	wplc_setup();
 	global $wplc_domain, $wpdb;
 
@@ -660,7 +675,7 @@ function wplc_show_admin_edit_page($id) {
 		$event = $wpdb->get_results($sql, ARRAY_A);
 
 		// Show edit form
-		wplc_show_event_form($event[0]);
+		wplc_show_event_form($event[0], null, $export);
 	}
 }
 
@@ -677,7 +692,7 @@ function wplc_show_export_page() {
 	<div class="wrap">
 		<h2><?php _e("Export Events", $wplc_domain); ?></h2>
 		<p>
-			<?php _e("WPListCal can save your events in the standard iCalendar format. Events are stored in the timezone that your blog is set to use. All events are exported at once, past and future. If you'd like to export a single event, go to the manage events page and click &quot;Export&quot; near the event you want to export.", $wplc_domain); ?>
+			<?php printf(__("WPListCal can save your events in the standard iCalendar format. Events are stored in the timezone that your blog is set to use. All events are exported at once, past and future. If you'd like to export a single event, go to the %smanage events%s page and click &quot;Export&quot; near the event you want to export.", $wplc_domain), "<a href='admin.php?page=wplc-edit'>", "</a>"); ?>
 		</p>
 		<h3><a href="admin.php?page=wplc-export&amp;op=export"><?php _e("Export events &raquo;", $wplc_domain); ?></a></h3>
 	</div>

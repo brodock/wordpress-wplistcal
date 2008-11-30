@@ -56,9 +56,10 @@ function wplc_export_events($id=null) {
 	$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
 	$sql = "SELECT e.*, u.display_name as event_author FROM $tbl_name e LEFT JOIN $wpdb->users u ON e.event_author=u.user_login";
 	if(!is_null($id)) {
-		$sql .= " WHERE id=".$wpdb->escape($id);
+		$sql .= " WHERE e.id=".$wpdb->escape($id);
 	}
 	$sql .= " ORDER BY event_start_time ASC, event_end_time ASC";
+	$wpdb->show_errors();
 	$events = $wpdb->get_results($sql, ARRAY_A);
 	
 	// Create events

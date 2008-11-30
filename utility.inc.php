@@ -123,6 +123,11 @@ function wplc_admin_css() {
 			border-bottom: 1px solid red;
 			color: white;
 		}
+		.wplc_link {
+			border-bottom:1px solid;
+			padding:1px 2px;
+			text-decoration:none;
+		}
 	</style>
 	<?php
 }
