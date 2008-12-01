@@ -29,6 +29,11 @@ function wplc_set_if_null(&$var, $option_id) {
 		$var = get_option($option_id);
 }
 
+function wplc_br2nl($string)
+{
+    return preg_replace('/\<br(\s*)?\/?\>/i', "\n", $string);
+}
+
 add_action('admin_print_scripts', 'wplc_js_admin_header');
 function wplc_js_admin_header() {
 	wp_print_scripts(array('sack'));

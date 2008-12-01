@@ -49,7 +49,7 @@ function wplc_export_events($id=null) {
 	
 	// Create calendar
 	$cal = new vcalendar();
-	$cal->setConfig("unique_id", "wplc_".$blog_title.$id);
+	$cal->setConfig("unique_id", "wplc_".$blog_title);
 	$cal->setProperty("method", "PUBLISH");
 	
 	// Get events
@@ -104,7 +104,47 @@ function wplc_export_events($id=null) {
 }
 
 function wplc_import_events($file) {
-	// TODO: Implement this
+	global $wpdb, $current_user;
+	get_currentuserinfo();
+	
+	$blog_title = get_bloginfo("name");
+	
+	// Create calendar
+	$cal = new vcalendar();
+	$cal->setConfig("unique_id", "wplc_".$blog_title);
+	$cal->setProperty("method", "PUBLISH");
+	
+	// Get file and parse it
+	$cal->setConfig("directory", dirname($file));
+	$cal->setConfig("filename", basename($file));
+	if($cal->parse() === false)
+		return false;
+	$cal->sort();
+	while($ev = $cal->getComponent("vevent")) {
+		$title = $wpdb->escape(addslashes($ev->getProperty("summary")));
+		$link = $wpdb->escape(addslashes($ev->getProperty("url")));
+		$location = $wpdb->escape(addslashes($ev->getProperty("location")));
+		$start = wplc_ical_array_to_time($ev->getProperty("dtstart"));
+		$end = wplc_ical_array_to_time($ev->getProperty("dtend"));
+		$description = $wpdb->escape(wplc_br2nl(addslashes($ev->getProperty("description"))));
+		$create = wplc_ical_array_to_time($ev->getProperty("created"));
+		$modified = time();
+		
+		$author = $current_user->user_login;
+		
+		// Convert time to local
+		$offset = (int)get_option("gmt_offset");
+		$unix_offset = $offset * 3600; // offset in seconds
+		$start += $unix_offset;
+		$end += $unix_offset;
+		$create += $unix_offset;
+		
+		$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
+		$sql = "INSERT INTO $tbl_name (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time, event_author, event_create_time, event_modified_time) VALUES('$title', '$link', '$location', $start, $end, '$description', '$author', $create, $modified)";
+		$wpdb->query($sql);
+	}
+	
+	return true;
 }
 
 function wplc_time_to_ical_array($time) {
@@ -115,5 +155,15 @@ function wplc_time_to_ical_array($time) {
 		"hour"	=> (int)date('G', $time),
 		"min"	=> (int)date('i', $time),
 		"sec"	=> 0);
+}
+
+function wplc_ical_array_to_time($time) {
+	return mktime(
+		$time['hour'],
+		$time['min'],
+		$time['sec'],
+		$time['month'],
+		$time['day'],
+		$time['year']);
 }
 ?>

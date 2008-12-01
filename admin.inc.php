@@ -680,8 +680,74 @@ function wplc_show_admin_edit_page($id, $export=false) {
 }
 
 function wplc_show_import_page() {
-	// TODO: Implement this
-	echo "Not yet implemented";
+	wplc_setup();
+	global $wplc_domain;
+	
+	$msgerr = false;	
+	if(isset($_POST['submit'])) {
+		if($_FILES['wplc_import_file']['type'] == "text/calendar") {
+			$dir = get_option("wplc_upload_dir");
+
+			if(empty($dir) || empty($url)) {
+				wplc_init_upload_dir_settings();
+				$dir = get_option("wplc_upload_dir");
+			}
+			
+			$uploadfile = $dir.basename($_FILES['wplc_import_file']['name']);
+			if(move_uploaded_file($_FILES['wplc_import_file']['tmp_name'], $uploadfile)) {
+				if(wplc_import_events($uploadfile)) {
+					$msgerr = true;
+					$message = __("Events successfully imported", $wplc_domain);
+					$class = "updated";
+				}
+				else {
+					$msgerr = true;
+					$message = __("Error: iCalendar file was not parsable", $wplc_domain);
+					$class = "error";
+				}
+			}
+			else {
+				$msgerr = true;
+				$message = __("Error: Upload failed", $wplc_domain);
+				$class = "error";
+			}
+		}
+		else {
+			$msgerr = true;
+			$message = __("Error: Invalid file type uploaded. Please upload an iCalendar file. Type: ".$_FILES['wplc_import_file']['type'], $wplc_domain);
+			$class = "error";
+		}
+	}
+	
+	if($msgerr) {
+	?>
+	<div id="message" class="<?php echo $class; ?>">
+		<p>
+			<?php echo $message; ?>
+		</p>
+	</div>
+	<?php	
+	}
+	
+	?>
+	<div class="wrap">
+		<h2><?php _e("Import Events", $wplc_domain); ?></h2>
+		<p>
+			<?php _e("WPListCal can import events from iCalendar files saved from programs like Apple iCal, Microsoft Outlook, and Mozilla Sunbird. Choose an iCalendar (.ics) file using the selector below and press &quot;Import&quot; to add all the events in the file to your WPListCal calendar.", $wplc_domain); ?>
+		</p>
+		<p>
+			<?php _e("Events will maintain the creation timestamp from the file, but the author will be listed as the account you are currently logged in as. The modified time will be changed to the current time.", $wplc_domain); ?>
+		</p>
+		<form method="post" action="admin.php?page=wplc-import" enctype="multipart/form-data">
+			<p>
+				<label for="wplc_import_file"><?php _e("iCalendar File:", $wplc_domain); ?></label>
+				<input type="file" name="wplc_import_file" id="wplc_import_file" />
+			</p>
+			<p>
+				<input type="submit" class="button-primary" name="submit" value="<?php _e('Import', $wplc_domain); ?>" />
+			</p>
+		</form>
+	<?php
 }
 
 function wplc_show_export_page() {

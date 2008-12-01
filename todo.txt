@@ -1,2 +1,3 @@
 - Make it so {text %START% word} only prints 'text' and 'word' if %START% is not empty
 - All day events
+- Fix event import
