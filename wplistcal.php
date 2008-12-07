@@ -86,6 +86,7 @@ if(!$wplc_is_included) {
 				event_desc text,
 				event_start_time bigint(11) DEFAULT '0' NOT NULL,
 				event_end_time bigint(11) DEFAULT '0' NOT NULL,
+				event_allday tinyint(1) DEFAULT 0 NOT NULL,
 				event_author bigint(20) unsigned,
 				event_create_time bigint(11) DEFAULT '0' NOT NULL,
 				event_modified_time bigint(11) DEFAULT '0' NOT NULL,
@@ -161,6 +162,8 @@ if(!$wplc_is_included) {
 			maybe_add_column($tbl_name, "event_modified_time", $sql);
 			$sql = "ALTER TABLE $tbl_name ADD event_author bigint(20) UNSIGNED;";
 			maybe_add_column($tbl_name, "event_author", $sql);
+			$sql = "ALTER TABLE $tbl_name ADD event_allday tinyint(1) DEFAULT 0 NOT NULL;";
+			maybe_add_column($tbl_name, "event_allday", $sql);
 			
 			update_option("wplc_db_version", WPLC_DB_VERSION);
 		}
@@ -241,7 +244,8 @@ if(!$wplc_is_included) {
 					e.event_loc as event_loc,
 					e.event_desc as event_desc,
 					e.event_start_time as event_start_time,
-					e.event_end_time as event_end_time";
+					e.event_end_time as event_end_time,
+					e.event_allday as event_allday";
 		
 		// Check if the format contains the author variable to decide whether to do the join or not
 		$needuserjoin = false;

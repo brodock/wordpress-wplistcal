@@ -84,6 +84,20 @@ function wplc_js_admin_header() {
 			you.value = me.value;
 		}
 	}
+	
+	function wplc_doallday(checked) {
+		var visibility = checked ? "hidden" : "visible";
+		
+		var starttime = document.getElementById("start-time-cont");
+		var endtime = document.getElementById("end-time-cont");
+		
+		if(starttime && typeof(starttime) != 'undefined') {
+			starttime.style.visibility = visibility;
+		}
+		if(endtime && typeof(endtime) != 'undefined') {
+			endtime.style.visibility = visibility;
+		}
+	}
 	//]]>
 	</script>
 	<?php

@@ -241,16 +241,18 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 										</select>
 										<input type="text" name="start-day" id="start-day" size="2" maxlength="2" value="<?php echo $date['event_start_day']; ?>" tabindex="4" onblur="wplc_matchValue('start-day', 'end-day', false);" />
 										<input type="text" name="start-year" id="start-year" size="4" maxlength="4" value="<?php echo $date['event_start_year']; ?>" tabindex="5" onblur="wplc_matchValue('start-year', 'end-year', false);" />
-										@ <input type="text" name="start-hour" id="start-hour" size="2" maxlength="2" value="<?php echo $date['event_start_hour']; ?>" tabindex="6" onblur="wplc_matchValue('start-hour', 'end-hour', false);" />
-										: <input type="text" name="start-minute" id="start-minute" size="2" maxlength="2" value="<?php echo $date['event_start_minute']; ?>" tabindex="7" onblur="wplc_matchValue('start-minute', 'end-minute', false);" />
-										<?php
-											if(!$use_24hr_time) {
-												$s[$date['event_start_ampm']] = " selected='selected'";
-										?>
-										<select name="start-ampm" id="start-ampm" tabindex="8" onchange="wplc_matchValue('start-ampm', 'end-ampm', true);">
-											<option value="AM"<?php echo $s['AM']; ?>>AM</option>
-											<option value="PM"<?php echo $s['PM']; ?>>PM</option>
-										</select>
+										<span id="start-time-cont"<?php echo $event['event_allday']==1 ? " style='visibility:hidden;'" : ""; ?>>
+											@ <input type="text" name="start-hour" id="start-hour" size="2" maxlength="2" value="<?php echo $date['event_start_hour']; ?>" tabindex="6" onblur="wplc_matchValue('start-hour', 'end-hour', false);" />
+											: <input type="text" name="start-minute" id="start-minute" size="2" maxlength="2" value="<?php echo $date['event_start_minute']; ?>" tabindex="7" onblur="wplc_matchValue('start-minute', 'end-minute', false);" />
+											<?php
+												if(!$use_24hr_time) {
+													$s[$date['event_start_ampm']] = " selected='selected'";
+											?>
+											<select name="start-ampm" id="start-ampm" tabindex="8" onchange="wplc_matchValue('start-ampm', 'end-ampm', true);">
+												<option value="AM"<?php echo $s['AM']; ?>>AM</option>
+												<option value="PM"<?php echo $s['PM']; ?>>PM</option>
+											</select>
+										</span>
 										<?php
 											}
 										?>
@@ -279,22 +281,27 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 										</select>
 										<input type="text" name="end-day" id="end-day" size="2" maxlength="2" value="<?php echo $date['event_end_day']; ?>" tabindex="10" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
 										<input type="text" name="end-year" id="end-year" size="4" maxlength="4" value="<?php echo $date['event_end_year']; ?>" tabindex="11" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-										@ <input type="text" name="end-hour" id="end-hour" size="2" maxlength="2" value="<?php echo $date['event_end_hour']; ?>" tabindex="12" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-										: <input type="text" name="end-minute" id="end-minute" size="2" maxlength="2" value="<?php echo $date['event_end_minute']; ?>" tabindex="13" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-										<?php
-											if(!$use_24hr_time) {
-												$s[$date['event_end_ampm']] = " selected='selected'";
-										?>
-										<select name="end-ampm" id="end-ampm" tabindex="14" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
-											<option value="AM"<?php echo $s['AM']; ?>>AM</option>
-											<option value="PM"<?php echo $s['PM']; ?>>PM</option>
-										</select>
+										<span id="end-time-cont"<?php echo $event['event_allday']==1 ? " style='visibility:hidden;'" : ""; ?>>
+											@ <input type="text" name="end-hour" id="end-hour" size="2" maxlength="2" value="<?php echo $date['event_end_hour']; ?>" tabindex="12" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
+											: <input type="text" name="end-minute" id="end-minute" size="2" maxlength="2" value="<?php echo $date['event_end_minute']; ?>" tabindex="13" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
+											<?php
+												if(!$use_24hr_time) {
+													$s[$date['event_end_ampm']] = " selected='selected'";
+											?>
+											<select name="end-ampm" id="end-ampm" tabindex="14" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
+												<option value="AM"<?php echo $s['AM']; ?>>AM</option>
+												<option value="PM"<?php echo $s['PM']; ?>>PM</option>
+											</select>
+										</span>
 										<?php
 											}
 										?>
 									</div>
 								</div>
-								<div style="height:1px;font-size:1px;clear:both;">&nbsp;</div>
+								<div style="clear:both;">
+									<input type="checkbox" name="event_allday" id="event_allday" value="1"<?php echo $event['event_allday']==1 ? " checked='checked'" : ""; ?> onclick="wplc_doallday(this.checked)" />
+									<label for="event_allday">All day event</label>
+								</div>
 							</div>
 						</div>
 	
@@ -333,20 +340,31 @@ function wplc_process_event($postvars) {
 	$description = addslashes($postvars['content']);
 	
 	$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
+	
+	$allday = $postvars['event_allday'] == 1;
+	if($allday) {
+		$start_time = "0:00";
+		$end_time = "23:59";
+	}
+	else {
+		$start_time = addslashes($postvars['start-hour']).":".
+		addslashes($postvars['start-minute']).
+		$postvars['start-ampm'];
+		
+		$end_time = addslashes($postvars['end-hour']).":".
+		addslashes($postvars['end-minute']).
+		$postvars['end-ampm'];
+	}
 
 	// Get timestamps from date/time info
 	$startstr = addslashes($postvars['start-year'])."-".
 				$postvars['start-month']."-".
 				addslashes($postvars['start-day'])." ".
-				addslashes($postvars['start-hour']).":".
-				addslashes($postvars['start-minute']).
-				$postvars['start-ampm'];
+				$start_time;
 	$endstr = addslashes($postvars['end-year'])."-".
 				$postvars['end-month']."-".
 				addslashes($postvars['end-day'])." ".
-				addslashes($postvars['end-hour']).":".
-				addslashes($postvars['end-minute']).
-				$postvars['end-ampm'];
+				$end_time;
 	$start = strtotime($startstr);
 	$end = strtotime($endstr);
 	
@@ -372,13 +390,14 @@ function wplc_process_event($postvars) {
 	// Add data to db
 	if(empty($postvars['id'])) {
 		$insert = "INSERT INTO ".$tbl_name.
-				  " (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time, event_author, event_create_time, event_modified_time) ".
+				  " (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time, event_allday, event_author, event_create_time, event_modified_time) ".
 				  "VALUES('".$wpdb->escape($name)."',
 						  '".$wpdb->escape($link)."',
 						  '".$wpdb->escape($location)."',
 						  '".$wpdb->escape($description)."',
 						  '".$wpdb->escape($start)."',
 						  '".$wpdb->escape($end)."',
+						  ".$wpdb->escape($allday ? '1' : '0').",
 						  '".$wpdb->escape($author)."',
 						  '".$wpdb->escape($create_mod_time)."',
 						  '".$wpdb->escape($create_mod_time)."');";
@@ -392,6 +411,7 @@ function wplc_process_event($postvars) {
 				  "event_desc='".$wpdb->escape($description)."',".
 				  "event_start_time='".$wpdb->escape($start)."',".
 				  "event_end_time='".$wpdb->escape($end)."',".
+				  "event_allday=".$wpdb->escape($allday ? '1' : '0').",".
 				  "event_modified_time='".$wpdb->escape($create_mod_time)."' ".
 				  "WHERE id=".$wpdb->escape($postvars['id']);
 		$results = $wpdb->query($update);
@@ -534,7 +554,7 @@ function wplc_show_admin_manage_page() {
 	
 
 	// Get events for this page
-	$sql = "SELECT id, event_name, event_loc, event_start_time, event_end_time"
+	$sql = "SELECT id, event_name, event_loc, event_start_time, event_end_time, event_allday"
 		 ." FROM ".$wpdb->escape(get_option("wplc_tbl_name"))
 		 ." ORDER BY event_start_time DESC, event_end_time DESC"
 		 ." LIMIT ".$wpdb->escape($offset).", ".$wpdb->escape($itemsperpage);
@@ -544,6 +564,8 @@ function wplc_show_admin_manage_page() {
 		$dateformat = 'D, M j, Y @ G:i';
 	else
 		$dateformat = 'D, M j, Y @ g:ia';
+	
+	$allday_format = "D, M j";
 	
 	$delmsg = __("You are about to delete the event \'%s\'. \\n\'OK\' to delete, \'Cancel\' to stop.", $wplc_domain);
 	
@@ -598,8 +620,9 @@ function wplc_show_admin_manage_page() {
 			<?php
 			for($i=0; $i<count($events); $i++) {
 				$class = $i % 2 == 0 ? " class='alternate'" : "";
-				$start = date($dateformat, $events[$i]['event_start_time']);
-				$end = date($dateformat, $events[$i]['event_end_time']);
+				$useformat = $events[$i]['event_allday'] == 1 ? $allday_format : $dateformat;
+				$start = date($useformat, $events[$i]['event_start_time']);
+				$end = date($useformat, $events[$i]['event_end_time']);
 			?>
 
 				<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
