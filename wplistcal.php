@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.1b1
+Version: 1.1
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -30,7 +30,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-define("WPLC_DB_VERSION", "1.1b");
+define("WPLC_DB_VERSION", "1.1");
 $wplc_domain = "wplistcal";
 $wplc_is_setup = false;
 $wplc_plugin = plugin_basename(__FILE__);
@@ -153,7 +153,7 @@ if(!$wplc_is_included) {
 			$sql = "ALTER TABLE $tbl_name ADD event_link text;";
 			maybe_add_column($tbl_name, "event_link", $sql);
 			
-			// v1.0.6 -> v1.1b
+			// v1.0.6 -> v1.1
 			$sql = "ALTER TABLE $tbl_name ADD event_loc text;";
 			maybe_add_column($tbl_name, "event_loc", $sql);
 			$sql = "ALTER TABLE $tbl_name ADD event_create_time bigint(11) DEFAULT '0' NOT NULL;";

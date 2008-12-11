@@ -1,6 +1,0 @@
-- Make it so {text %START% word} only prints 'text' and 'word' if %START% is not empty
-- All day events
-	- add all day format option
-	- apply that option to the show events function
-	- hide time on all day events in manage page
-- Fix event import

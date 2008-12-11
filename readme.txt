@@ -2,9 +2,9 @@
 Contributors: jonkern
 Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
-Requires at least: 2.5
-Tested up to: 2.6.3
-Stable tag: 1.0.8.2
+Requires at least: 2.7
+Tested up to: 2.7
+Stable tag: 1.1
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
 
@@ -14,8 +14,8 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 = Version Guide =
 
-* WordPress 2.7 or later &rarr; Use WPListCal 1.1b (development release, not yet stable)
-* WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.2 (current stable release)
+* WordPress 2.7 or later &rarr; Use WPListCal 1.1 (current stable release)
+* WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.2
 * WordPress 2.0.3-2.3.3 &rarr; Use WPListCal 1.0.2
 
 == Installation ==
@@ -101,13 +101,17 @@ Events created before upgrading to version 1.1 did not have those values set, th
 
 This is a known bug in PHP (id# [44209](http://bugs.php.net/44209)) and was fixed in version 5.2.6. The specific issue was that strtotime() did not support 64-bit timestamps.
 
+= Does WPListCal use any 3rd party libraries? =
+
+Yes, WPListCal is packaged with iCalcreator which is released under the GNU LGPL
+
 = I love WPListCal, but I'd like it to do &lt;blank&gt;. =
 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
 
-= 1.1b1 (development release) =
+= 1.1 (current stable) =
 
 * Updated all styles and elements for WordPress 2.7
 * Menus refactored to fit into the new WordPress 2.7 menu structure
@@ -116,10 +120,10 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 * Added widget support
 * Refactored code into separate files
 * Fixed a non-localizable string literal in the options page
-* Added event import/export
-* All-day events
+* Added event export
+* Added link to the WordPress 2.7 admin favorites menu
 
-= 1.0.8.2 (current stable) =
+= 1.0.8.2 =
 
 * Removed a 2.7-only function that caused PHP warnings on 2.6
 * Re-enabled media upload buttons since they now work right

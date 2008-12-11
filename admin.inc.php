@@ -124,7 +124,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 	}
 	?>
 	<div class="wrap">
-		<h2><?php echo $editing ? __("Edit Event", $wplc_domain) : __("Add Event", $wplc_domain); ?></h2>
+		<h2><?php echo $editing ? __("Edit Event", $wplc_domain) : __("Add New Event", $wplc_domain); ?></h2>
 		<form name="event" id="event" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
 			<input type="hidden" id="user-id" name="user_ID" value="<?php echo (int) $user_ID ?>" />
 			<div id="poststuff">
@@ -299,8 +299,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 									</div>
 								</div>
 								<div style="clear:both;">
-									<input type="checkbox" name="event_allday" id="event_allday" value="1"<?php echo $event['event_allday']==1 ? " checked='checked'" : ""; ?> onclick="wplc_doallday(this.checked)" />
-									<label for="event_allday">All day event</label>
+									&nbsp;
 								</div>
 							</div>
 						</div>
@@ -453,7 +452,8 @@ function wplc_add_admin_pages() {
 	
 	add_submenu_page($wplc_plugin, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), 2, $wplc_plugin, "wplc_show_admin_write_page");
 	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), 2, "wplc-edit", "wplc_show_admin_manage_page");
-	add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), 2, "wplc-import", "wplc_show_import_page");
+	// Import not ready for release
+	//add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), 2, "wplc-import", "wplc_show_import_page");
 	add_submenu_page($wplc_plugin, __("Export Events", $wplc_domain), __("Export", $wplc_domain), 2, "wplc-export", "wplc_show_export_page");
 	
 	get_currentuserinfo();
@@ -461,6 +461,15 @@ function wplc_add_admin_pages() {
 	if($user_level > 6) {
 		add_options_page(__("WPListCal Settings", $wplc_domain), __("WPListCal", $wplc_domain), 6, "wplc-options", "wplc_show_admin_options_page");
 	}
+}
+
+add_filter("favorite_actions", "wplc_favorite_actions_filter");
+function wplc_favorite_actions_filter($actions) {
+	global $wplc_plugin, $wplc_domain;
+	wplc_setup();
+	
+	$actions['admin.php?page='.$wplc_plugin] = array(__("New Event", $wplc_domain), "edit_posts");
+	return $actions;
 }
 
 add_action("right_now_table_end", "wplc_activity_box");
@@ -558,6 +567,7 @@ function wplc_show_admin_manage_page() {
 		 ." FROM ".$wpdb->escape(get_option("wplc_tbl_name"))
 		 ." ORDER BY event_start_time DESC, event_end_time DESC"
 		 ." LIMIT ".$wpdb->escape($offset).", ".$wpdb->escape($itemsperpage);
+		$wpdb->show_errors();
 	$events = $wpdb->get_results($sql, ARRAY_A);
 	
 	if($use_24hr_time)
@@ -627,8 +637,8 @@ function wplc_show_admin_manage_page() {
 
 				<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
 					<th scope="row" style="text-align:center;" class="check-column"><?php echo $events[$i]['id']; ?></th>
-					<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a><br />
-						<a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="submitdelete"><?php _e("Delete", $wplc_domain); ?></a> | <a href="admin.php?page=wplc-edit&amp;op=export&amp;id=<?php echo $events[$i]['id']; ?>"><?php _e("Export", $wplc_domain); ?></a>
+					<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a>
+						<div class="row-actions"><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="submitdelete"><?php _e("Delete", $wplc_domain); ?></a> | <a href="admin.php?page=wplc-edit&amp;op=export&amp;id=<?php echo $events[$i]['id']; ?>"><?php _e("Export", $wplc_domain); ?></a></div>
 					</td>
 					<td><?php echo stripslashes(stripslashes($events[$i]['event_loc'])); ?></td>
 					<td><?php echo $start; ?></td>
@@ -703,6 +713,9 @@ function wplc_show_admin_edit_page($id, $export=false) {
 }
 
 function wplc_show_import_page() {
+	// Not ready for release
+	return;
+	
 	wplc_setup();
 	global $wplc_domain;
 	
