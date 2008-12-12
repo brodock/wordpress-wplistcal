@@ -25,20 +25,23 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-function set_tz_by_offset($offset) {
-	$abbrarray = timezone_abbreviations_list();
-	foreach ($abbrarray as $abbr) {
-		foreach ($abbr as $city) {
-			if ($city['offset'] == $offset) { // remember to multiply $offset by -1 if you're getting it from js
-				date_default_timezone_set($city['timezone_id']);
-				return true;
+// If this isn't PHP5.1, we don't need this anyway
+if(version_compare(phpversion(), '5.1.0') == 1) {
+	function set_tz_by_offset($offset) {
+		$abbrarray = timezone_abbreviations_list();
+		foreach ($abbrarray as $abbr) {
+			foreach ($abbr as $city) {
+				if ($city['offset'] == $offset) { // remember to multiply $offset by -1 if you're getting it from js
+					date_default_timezone_set($city['timezone_id']);
+					return true;
+				}
 			}
-		}
-	}	
-	date_default_timezone_set("ust");
-	return false;
+		}	
+		date_default_timezone_set("ust");
+		return false;
+	}
+	set_tz_by_offset(get_option("gmt_offset"));
 }
-set_tz_by_offset(get_option("gmt_offset"));
 
 require_once("iCalcreator.class.php");
 

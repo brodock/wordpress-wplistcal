@@ -150,4 +150,20 @@ function wplc_admin_css() {
 	</style>
 	<?php
 }
+
+function wplc_is_wplc_page() {
+	global $wplc_plugin;
+	
+	switch($_GET['page']) {
+		case $wplc_plugin:
+		case "wplc-edit":
+		case "wplc-options":
+		case "wplc-import":
+		case "wplc-export":
+		case "wplc-delete-event":
+			return true;
+		default:
+			return false;
+	}
+}
 ?>

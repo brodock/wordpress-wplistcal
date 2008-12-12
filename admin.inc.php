@@ -25,16 +25,18 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-add_action( 'admin_head', 'wplc_editor_init' );
-function wplc_editor_init() {
-	wp_admin_css('thickbox');
-	wp_print_scripts('editor');
-	add_thickbox();
-	wp_print_scripts('media-upload');
-	wp_print_scripts('jquery');
-	wp_print_scripts('jquery-ui-core');
-	wp_print_scripts('jquery-ui-tabs');
-	if(function_exists('wp_tiny_mce')) wp_tiny_mce();
+if(wplc_is_wplc_page()) {
+	add_action( 'admin_head', 'wplc_editor_init' );
+	function wplc_editor_init() {
+		wp_admin_css('thickbox');
+		wp_print_scripts('editor');
+		add_thickbox();
+		wp_print_scripts('media-upload');
+		wp_print_scripts('jquery');
+		wp_print_scripts('jquery-ui-core');
+		wp_print_scripts('jquery-ui-tabs');
+		if(function_exists('wp_tiny_mce')) wp_tiny_mce();
+	}
 }
 
 function wplc_show_event_form($event=array(), $message=null, $export=false) {
