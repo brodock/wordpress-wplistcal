@@ -312,6 +312,7 @@ if(!$wplc_is_included) {
 				}
 			}
 			$cleaned_name = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_name']))));
+			$cleaned_loc = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_loc']))));
 			$cleaned_desc = nl2br(htmlspecialchars_decode(str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_desc']))))));
 			$cleaned_link = htmlspecialchars(stripslashes(stripslashes($events[$i]['event_link'])));
 			$target = get_option("wplc_open_links_in_new_window") == "true" ? " target='_blank'" : "";
@@ -323,7 +324,7 @@ if(!$wplc_is_included) {
 				$evt = str_replace("%NAME%", $cleaned_name, $event_format);
 				$evt = str_replace("%LINK%", $cleaned_link, $evt);
 				$evt = str_replace("%LINKEDNAME%", $linked_name, $evt);
-				$evt = str_replace("%LOCATION%", $events[$i]['event_loc'], $evt);
+				$evt = str_replace("%LOCATION%", $cleaned_loc, $evt);
 				$evt = str_replace("%DESCRIPTION%", $cleaned_desc, $evt);
 				$evt = str_replace("%START%", $start, $evt);
 				$evt = str_replace("%END%", $end, $evt);
