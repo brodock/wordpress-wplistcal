@@ -161,9 +161,34 @@ function wplc_is_wplc_page() {
 		case "wplc-import":
 		case "wplc-export":
 		case "wplc-delete-event":
+		case "wplc_cleanup":
 			return true;
 		default:
 			return false;
+	}
+}
+
+function dbg_print_array(&$array) {
+	echo "<pre>";
+	print_r($array);
+	echo "</pre>";
+}
+
+// Returns the server time converted to the wordpress timezone time
+function wplc_time() {
+	$time = time();
+	$gmt_time = $time - intval(date('Z', $time));
+	$wp_offset = get_option("gmt_offset");
+	return $gmt_time + ($wp_offset * 3600);
+}
+
+class FormatToken {
+	var $string;
+	var $dependent;
+	
+	function FormatToken($_string, $_dependent=null) {
+		$this->string = $_string;
+		$this->dependent = $_dependent;
 	}
 }
 ?>

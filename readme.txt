@@ -10,9 +10,11 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 == Description ==
 
-WPListCal allows you to list upcoming events on your blog in a list or table format.  It plugs straight into the Wordpress admin pages to let you keep track of events just like posts and pages.  You can then list events on a page or post using a special tag, or incorporate events into your theme files using a PHP function call.
+WPListCal allows you to list upcoming events on your blog in a list or table format.  It plugs straight into the Wordpress admin pages to let you keep track of events just like posts and pages.  You can then list events on a page or post using a shortcode, show events in your sidebar with a widget, or incorporate events into your theme files using a PHP function call.
 
 = Version Guide =
+
+If you’d like to help test the next version of WPListCal, download the development version (1.2).
 
 * WordPress 2.7 or later &rarr; Use WPListCal 1.1.1 (current stable release)
 * WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.2
@@ -20,18 +22,21 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 == Installation ==
 
-1. Upload `wplistcal.php` to the `/wp-content/plugins/` directory or any subdirectory
+1. Upload the `wplistcal` folder to the `/wp-content/plugins/` directory
 1. Activate the plugin through the 'Plugins' menu in WordPress
 
 = Upgrade =
 
-1. DO NOT DEACTIVATE THE PREVIOUS VERSION OF THE PLUGIN! Doing so could remove all your events.
-1. Upload `wplistcal.php` to the `wp-content/plugins/` directory or any subdirectory
+1. If you are upgrading from version 1.0.5 or earlier, DO NOT DEACTIVATE THE PREVIOUS VERSION OF THE PLUGIN! Doing so will remove all your events.
+1. Upload the `wplistcal` folder to the `wp-content/plugins/` directory
 1. Deactivate and then activate the plugin though the 'Plugins' menu in WordPress
 
 = Usage =
 
 1. Change the default settings on the WPListCal options page
+1. If you want to list your events on a page or post, use the [wplistcal] shortcode. Use the parameters in the example below. Leave out parameters to default to the options defined in the WPListCal settings page. (1.2 or later only)
+	> _Example:_ `[wplistcal display_mode="list", event_format="%NAME%", date_format="M j, Y g:ia", max_events="-1", show_past_events="false", advance_days="-1", event_order="asc", hide_same_date="true", date2_time_format="g:ia", no_events_msg="No events!"]`
+
 1. If you want to list your events on a page or post, insert the tag `<!--wplistcal-->` in the body of the page/post
 1. If you want to list your events in your sidebar, activate the WPListCal widget in the widget admin section
 1. If you want to list your events somewhere in your theme files, insert `<?php echo wplc_show_events(); ?>`
@@ -41,7 +46,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
     > __Display Mode__ (string): `'list'` or `'table'`
 
-    > __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %LINK%, %LINKEDNAME%, %START%, %END%, %DESCRIPTION%.
+    > __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %LINK%, %LINKEDNAME%, %START%, %END%, %DESCRIPTION%. You can also make statements dependent on a variable by wrapping them in curly brackets (ex. {Date: %START%}). See &quot;Dependent Statements&quot; below for more information.
 
     > __Date Format__ (string): The format to display the start and end date and time.  Uses [the same date formatting that Wordpress uses](http://codex.wordpress.org/Formatting_Date_and_Time).
 
@@ -59,7 +64,41 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 	
 	> __No Events Message__ (string): If there are no events, show this string instead, leave blank for none.
 
-    > _Example:_ `<?php echo wplc_show_events('list', '%LINKEDNAME%: %START% - %END%<br />%DESCRIPTION%', 'M j, Y g:ia', -1, false, 30, 'asc', true, 'g:ia', 'Sorry, no events'); ?>`
+    > _Example:_ `<?php echo wplc_show_events('list', '%LINKEDNAME%: %START% - %END%{<br />%DESCRIPTION%}', 'M j, Y g:ia', -1, false, 30, 'asc', true, 'g:ia', 'Sorry, no events'); ?>`
+
+= Dependent Statements (1.2 or later only) =
+
+You can make a statement dependent on the existence of a variable by wrapping it in curly brackets. By default, the statement will only print if the first variable in the statement is not empty. You cannot have nested dependent statements.
+
+**Example 1:**
+
+The statement in the curly brackets won't print if %LOCATION% is empty
+
+	%TITLE%{ at %LOCATION%} on %START%
+
+**Example 2:**
+
+To print a literal curly bracket, escape it with '^'
+
+	%TITLE%{ at %LOCATION} ^{new^}
+
+**Example 3:**
+
+To skip a variable when determining the dependent variable, escape its '%' characters with '^'. This method also works to print a literal '%' inside a dependent statement. In this example, the statement in the curly brackets will print if %LOCATION% is not empty. Note that %AUTHOR% will be properly substituted even though it is escaped.
+
+	%TITLE%{ hosted by ^%AUTHOR^% at %LOCATION%}
+
+**Example 4:** (invalid)
+
+This example is invalid. You cannot have nested dependent statements.
+
+	%TITLE{ at %LOCATION%{ on %START%}}
+
+**Example 5:**
+
+However, you can have multiple dependent statements in a format.
+
+	%TITLE%{ hosted by %AUTHOR%}{ at %LOCATION} on %START%
 
 == Frequently Asked Questions ==
 
@@ -81,17 +120,9 @@ WPListCal is specialized to provide clean list or table based output for you to 
 
 WPListCal 1.1 and later work on 2.7
 
-= Does WPListCal work on WordPress 2.5? =
+= When I click settings in the plugins page, I get the error "Cannot load wplc-options." =
 
-WPListCal 1.0.3 and later work on 2.5
-
-= When I try to edit my options, I get an error: "Your attempt to edit your settings has failed." =
-
-Download WPListCal 1.0.3 or later.
-
-= When I click edit on the manage page, I get the error: "Cannot find wplistcal.php" =
-
-Download WPListCal 1.0.4 or later.
+WPListCal 1.2 solves this issue
 
 = Why do some of my events show N/A for author and create date? =
 
@@ -111,84 +142,92 @@ Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's 
 
 == Changelog ==
 
+= 1.2 (development version) =
+
+* NEW: Event cleanup
+* FIXED: Updated admin menus to use Wordpress Capabilities instead of user levels (fixes settings page bug)
+* NEW: Conditional format strings (i.e. bracketed statements)
+* NEW: Shortcode support
+* FIXED: All timestamps are now based on the WordPress timezone option instead of server time
+
 = 1.1.1 =
 
-* Moved the timezone functions into a PHP5-only block for back-compat
-* Load scripts only when we're on a WPListCal page
+* FIXED: Moved the timezone functions into a PHP5-only block for back-compat
+* FIXED: Load scripts only when we're on a WPListCal page
 
 = 1.1 =
 
-* Updated all styles and elements for WordPress 2.7
-* Menus refactored to fit into the new WordPress 2.7 menu structure
-* Dashboard now shows number of events published
-* Added a location field
-* Added widget support
-* Refactored code into separate files
-* Fixed a non-localizable string literal in the options page
-* Added event export
-* Added link to the WordPress 2.7 admin favorites menu
+* NEW: Updated all styles and elements for WordPress 2.7
+* NEW: Menus refactored to fit into the new WordPress 2.7 menu structure
+* NEW: Dashboard now shows number of events published
+* NEW: Location field
+* NEW: Widget support
+* FIXED: Refactored code into separate files
+* FIXED: Replaced a non-localizable string literal in the options page
+* NEW: Event export
+* NEW: Added link to the WordPress 2.7 admin favorites menu
 
 = 1.0.8.2 =
 
-* Removed a 2.7-only function that caused PHP warnings on 2.6
-* Re-enabled media upload buttons since they now work right
+* FIXED: Removed a 2.7-only function that caused PHP warnings on 2.6
+* FIXED: Re-enabled media upload buttons since they now work right
 
 = 1.0.8.1 =
 
-* Fixed options page warning
+* FIXED: Options page warning
 
 = 1.0.8 =
 
-* Fixed the visual editor (again)
+* FIXED: Visual editor was broken (again)
 
 = 1.0.7 =
 
-* Added the option to use a different date format for the end date if the event starts and ends on the same day
-* Added the option to display a message if there are no events to show
-* Added the option to set rel='nofollow' on links in the event listing
-* Added the option to display events in reverse order
+* NEW: Option to use a different date format for the end date if the event starts and ends on the same day
+* NEW: Option to display a message if there are no events to show
+* NEW: Option to set rel='nofollow' on links in the event listing
+* NEW: Option to display events in reverse order
 
 = 1.0.6 =
 
-* Added link field to events
-* Description box now has the correct tab index on the new &amp; edit pages
-* Table view now uses properly cleaned fields
-* Past events option now defaults to "Only show current and future events" if it is not set
-* Deactivating the plugin no longer deletes all WPListCal settings and data
-* Write section tab now named Event instead of Add Event for consistency with WordPress
+* NEW: Link field on events
+* FIXED: Description box now has the correct tab index on the new &amp; edit pages
+* FIXED: Table view now uses properly cleaned fields
+* FIXED: Past events option now defaults to "Only show current and future events" if it is not set
+* FIXED: Deactivating the plugin no longer deletes all WPListCal settings and data
+* FIXED: Write section tab now named Event instead of Add Event for consistency with WordPress
 
 = 1.0.5 =
 
-* Return of the WPListCal options tab
-* Fixed the visual editor
-* Fixed `htmlspecialchars_decode` function error
-* Plugin now works on servers with `short_open_tag` disabled
+* FIXED: Return of the WPListCal options tab
+* FIXED: the visual editor didn't work
+* FIXED: `htmlspecialchars_decode` function threw error
+* FIXED: Plugin now works on servers with `short_open_tag` disabled
 
 = 1.0.4 =
 
-* Fixed edit &amp; options links to work when `wplistcal.php` is in a subfolder
-* Removed options link from edit &amp; new event pages if the user doesn't have permissions to view it
-* Settings tab no longer appears to users who do not have permissions to it
-* Visual editor now works properly (also fixes `switcheditors not defined` error)
+* FIXED: Edit &amp; options links to work when `wplistcal.php` is in a subfolder
+* FIXED: Removed options link from edit &amp; new event pages if the user doesn't have permissions to view it
+* FIXED: Settings tab no longer appears to users who do not have permissions to it
+* FIXED: Visual editor now works properly (also fixes `switcheditors not defined` error)
 
 = 1.0.3 =
 
-* Fixed options bug introduced by WordPress 2.5
-* Restyled admin menus to look like WordPress 2.5
-* Localized a few hardcoded strings
-* Added 24hr time support for the admin area
-* Added advanced notice limit option
-* Every other event in both the list and table view has the css class `wplc_alt` applied to it to allow alternating row formatting
-* Fixed maximum events setting on `wplc_show_events`
-* Fixed display of event titles containing single quotes
+* FIXED: Options bug introduced by WordPress 2.5
+* NEW: Restyled admin menus to look like WordPress 2.5
+* FIXED: Localized a few hardcoded strings
+* NEW: 24hr time support for the admin area
+* NEW: Advanced notice limit option
+* NEW: Every other event in both the list and table view has the css class `wplc_alt` applied to it to allow alternating row formatting
+* FIXED: Maximum events setting on `wplc_show_events` was broken
+* FIXED: Event titles containing single quotes printed wrong
 
 = 1.0.2 =
 
-* Fixed a bug with the Maximum Events option that caused it to always default to show all events
+* FIXED: Maximum Events option always defaulted to show all events
 
 = 1.0.1 =
 
-* Added definition for `str_ireplace()` for servers not running PHP5
+* FIXED: Added definition for `str_ireplace()` for servers not running PHP5
 
 = 1.0 =
 

@@ -55,7 +55,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 	// Prep event times
 	$d = $event['event_start_time'];
 	if(empty($d))
-		$d = time();
+		$d = wplc_time();
 	$date['event_start_month'] = date('n', $d);
 	$date['event_start_day'] = date('j', $d);
 	$date['event_start_year'] = date('Y', $d);
@@ -69,7 +69,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 	
 	$d = $event['event_end_time'];
 	if(empty($d))
-		$d = time() + 3600;
+		$d = wplc_time() + 3600;
 	$date['event_end_month'] = date('n', $d);
 	$date['event_end_day'] = date('j', $d);
 	$date['event_end_year'] = date('Y', $d);
@@ -370,7 +370,7 @@ function wplc_process_event($postvars) {
 	$end = strtotime($endstr);
 	
 	$author = $current_user->ID;
-	$create_mod_time = time();
+	$create_mod_time = wplc_time();
 
 	// Validation & Error Handling
 	// If name is empty, just refresh the post page
@@ -380,7 +380,7 @@ function wplc_process_event($postvars) {
 	}
 	// If start time is invalid, use NOW
 	if($start === -1 || $start === false)
-		$start = time();
+		$start = wplc_time();
 	// If end time is invalid, use start
 	if($end === -1 || $end === false)
 		$end = $start;
@@ -452,17 +452,15 @@ function wplc_add_admin_pages() {
 	
 	add_object_page(__("Events"), __("Events"), 2, $wplc_plugin, "wplc_show_admin_write_page", $wplc_dir."/icon.gif");
 	
-	add_submenu_page($wplc_plugin, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), 2, $wplc_plugin, "wplc_show_admin_write_page");
-	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), 2, "wplc-edit", "wplc_show_admin_manage_page");
+	add_submenu_page($wplc_plugin, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), "edit_posts", $wplc_plugin, "wplc_show_admin_write_page");
+	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), "edit_posts", "wplc-edit", "wplc_show_admin_manage_page");
 	// Import not ready for release
-	//add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), 2, "wplc-import", "wplc_show_import_page");
-	add_submenu_page($wplc_plugin, __("Export Events", $wplc_domain), __("Export", $wplc_domain), 2, "wplc-export", "wplc_show_export_page");
-	
-	get_currentuserinfo();
-	global $user_level;
-	if($user_level > 6) {
-		add_options_page(__("WPListCal Settings", $wplc_domain), __("WPListCal", $wplc_domain), 6, "wplc-options", "wplc_show_admin_options_page");
-	}
+	//add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), "import", "wplc-import", "wplc_show_import_page");
+	add_submenu_page($wplc_plugin, __("Export Events", $wplc_domain), __("Export", $wplc_domain), "read", "wplc-export", "wplc_show_export_page");
+	add_submenu_page($wplc_plugin, __("Cleanup Events", $wplc_domain), __("Cleanup", $wplc_domain), "delete_posts", "wplc-cleanup", "wplc_show_admin_cleanup_page");
+	// TODO: Get needed user level for RSS
+	//add_submenu_page($wplc_plugin, __("Manage RSS", $wplc_domain), __("RSS", $wplc_domain), "********************** SOMETHING!", "wplc-rss", "wplc_show_admin_rss_page");
+	add_options_page(__("WPListCal Settings", $wplc_domain), __("WPListCal", $wplc_domain), "manage_options", "wplc-options", "wplc_show_admin_options_page");
 }
 
 add_filter("favorite_actions", "wplc_favorite_actions_filter");
@@ -807,6 +805,54 @@ function wplc_show_export_page() {
 	}
 }
 
+function wplc_show_admin_cleanup_page() {
+	wplc_setup();
+	global $wplc_domain;
+	
+	if($_GET['op'] == "cleanup") {
+		$num = wplc_cleanup_events();
+		if($num > 0) {
+			$message = sprintf(__("%d old ".($num == 1 ? "event" : "events")." deleted.", $wplc_domain), $num);
+			$class = "updated";
+		}
+		elseif($num == 0) {
+			$message = __("No old events to delete.", $wplc_domain);
+			$class = "updated";
+		}
+		else {
+			$message = __("Error: Event cleanup failed.", $wplc_domain);
+			$class = "error";
+		}
+		?>
+		<div id="message" class="<?php echo $class; ?>">
+			<p>
+				<?php echo $message; ?>
+			</p>
+		</div>
+		<?php
+	}
+	?>
+	<div class="wrap">
+		<h2><?php _e("Cleanup Events", $wplc_domain); ?></h2>
+		<p>
+			<?php _e("Have a bunch of old events sitting around? Click below to delete all events that have ended already. Note that this operation CANNOT be undone.", $wplc_domain); ?>
+		</p>
+		<h3><a href="admin.php?page=wplc-cleanup&amp;op=cleanup" onclick="return confirm('<?php _e("Are you sure you want to delete all past events?", $wplc_domain); ?>');"><?php _e("Cleanup events &raquo;", $wplc_domain); ?></a></h3>
+	</div>
+	<?php
+}
+
+function wplc_cleanup_events() {
+	global $wpdb;
+	
+	$sql = "DELETE FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." WHERE event_end_time < ".wplc_time();
+	$result = $wpdb->query($sql);
+	
+	if($result === false)
+		return -1;
+	return $result;
+}
+
 function wplc_show_admin_options_page() {
 	wplc_setup();
 	global $wplc_domain;
@@ -844,7 +890,9 @@ function wplc_show_admin_options_page() {
 							<label for="wplc_display_mode_list"><?php _e("Show events in an unordered list <em>(Default)</em>", $wplc_domain); ?></label>
 						<br />
 						<fieldset style="margin-left: 25px;border:none;">
-							<legend style="float:left; margin-top:2px;"><?php _e("Event Format", $wplc_domain); ?> <a href="javascript:;" title="<?php _e("The following variables are available:", $wplc_domain); ?> %NAME%, %LINK%, %LINKEDNAME%, %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR%" style="cursor:help;">?</a>:</legend>
+							<legend style="float:left; margin-top:2px;"><?php _e("Event Format", $wplc_domain); ?> <a href="javascript:;" title="<?php _e("The following variables are available:", $wplc_domain); ?> %NAME%, %LINK%, %LINKEDNAME%, %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR%.
+								
+Put words into curly brackets to make them dependent on the first variable in the bracketed statement. Use '^' to escape brackets or to stop a variable from being the dependent variable for a statement." style="cursor:help;">?</a>:</legend>
 							<div>
 								<textarea name="wplc_event_format" id="wplc_event_format" style="width:350px; height:50px;" class="large-text code"<?php echo get_option('wplc_display_mode') == 'list' ? "" : "disabled='disabled'"; ?>><?php echo htmlentities(get_option('wplc_event_format')); ?></textarea>
 							</div>
@@ -859,7 +907,7 @@ function wplc_show_admin_options_page() {
 						<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" class="regular-text" />
 						<span class="setting-description"><a href="http://codex.wordpress.org/Formatting_Date_and_Time"><?php _e("Documentation on date formatting", $wplc_domain); ?></a>. <?php _e("Click &quot;Update Options&quot; to update sample output.", $wplc_domain); ?></span>
 						<br />
-						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), time()); ?>
+						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), wplc_time()); ?>
 					</td>
 				</tr>
 				<tr valign="top" id="24hr_time">

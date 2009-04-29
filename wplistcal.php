@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.1.1
+Version: 1.2
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -30,7 +30,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-define("WPLC_DB_VERSION", "1.1");
+define("WPLC_DB_VERSION", "1.2");
 $wplc_domain = "wplistcal";
 $wplc_is_setup = false;
 $wplc_plugin = plugin_basename(__FILE__);
@@ -64,7 +64,7 @@ if(!$wplc_is_included) {
 		global $wplc_domain, $wplc_is_setup;
 		if($wplc_is_setup)
 			return;
-		load_plugin_textdomain($wplc_domain, 'wp-content/plugins');
+		load_plugin_textdomain($wplc_domain, $wplc_dir);
 		$wplc_is_setup = true;
 	}
 
@@ -73,8 +73,11 @@ if(!$wplc_is_included) {
 		wplc_setup();
 		global $wpdb, $wplc_domain, $current_user;
 		get_currentuserinfo();
+		
+		$siteurl = get_bloginfo("siteurl");
 	
 		$tbl_name = $wpdb->prefix."wplistcal";
+		$tbl_rss = $wpdb->prefix."wplistcal_rss";
 	
 		// Check if DB exists and add it if necessary
 		if($wpdb->get_var("SHOW TABLES LIKE '$tbl_name'") != $tbl_name) {
@@ -99,9 +102,9 @@ if(!$wplc_is_included) {
 			// Add dummy data
 			$welcome_event_name = __("Add events to WPListCal", $wplc_domain);
 			$welcome_event_desc = __("Congratulations, you've just installed WPListCal! Now you just need to add your events into the system via the event tab in the Write area of the admin panel.", $wplc_domain);
-			$welcome_event_start_time = time();
-			$welcome_event_end_time = time() + 3600;
-			$welcome_event_create_mod_time = time();
+			$welcome_event_start_time = wplc_time();
+			$welcome_event_end_time = wplc_time() + 3600;
+			$welcome_event_create_mod_time = wplc_time();
 		
 			$insert = "INSERT INTO ".$tbl_name.
 					  " (event_name, event_desc, event_start_time, event_end_time, event_create_time, event_modified_time, event_author) ".
@@ -112,12 +115,56 @@ if(!$wplc_is_included) {
 							  '".$wpdb->escape($welcome_event_create_mod_time)."',
 							  '".$wpdb->escape($welcome_event_create_mod_time)."',
 							  '".$wpdb->escape($current_user->ID)."');";
-			$results = $wpdb->query($insert);
+			$wpdb->query($insert);
 		}
+		/*// The 1.1 -> 1.2 upgrade will hit this codepath since tbl_rss
+		// won't exist yet, so no need to add an upgrade action.
+		if($wpdb->get_var("SHOW TABLES LIKE '$tbl_rss'") != $tbl_rss) {
+			$sql = "CREATE TABLE ".$tbl_rss."(
+				id INT NOT NULL AUTO_INCREMENT,
+				feed_title VARCHAR(255) NOT NULL,
+				feed_description TEXT NOT NULL,
+				feed_link TEXT NOT NULL,
+				feed_icon_url TEXT,
+				event_format TEXT,
+				date_format VARCHAR(255),
+				max_events INT DEFAULT -1,
+				advanced_days INT DEFAULT -1,
+				date2_time_format VARCHAR(255),
+				feed_flags INT DEFAULT 0 NOT NULL,
+				PRIMARY KEY  id (id)
+			);";
+		
+			require_once(ABSPATH.'wp-admin/upgrade-functions.php');
+			dbDelta($sql);
+		
+			// Add dummy data
+			$blog_title = get_bloginfo("name");
+			$default_feed_title = $blog_title." Calendar Feed";
+			$default_feed_description = "Events from $blog_title";
+			$default_feed_link = $siteurl;
+			$default_event_format = "%START% - %END%: %DESCRIPTION%";
+			$default_date_format = "M j, Y g:ia";
+			$default_date2_time_format = "g:ia";
+			$default_feed_flags = WPLC_RSS_HIDESAMEDATE;
+		
+			$insert = "INSERT INTO ".$tbl_rss.
+					  " (feed_title, feed_description, feed_link, event_format,
+							date_format, date2_time_format, feed_flags) ".
+					  "VALUES('".$wpdb->escape($default_feed_title)."',
+							  '".$wpdb->escape($default_feed_description)."',
+							  '".$wpdb->escape($default_feed_link)."',
+							  '".$wpdb->escape($default_event_format)."',
+							  '".$wpdb->escape($default_date_format)."',
+							  '".$wpdb->escape($default_date2_time_format)."',
+							  ".$wpdb->escape($default_feed_flags).");";
+			$wpdb->query($insert);
+		}*/
 		
 		// If an option already exists, these functions do nothing
 		add_option("wplc_db_version", WPLC_DB_VERSION);
 		add_option("wplc_tbl_name", $tbl_name);
+		add_option("wplc_tbl_rss", $tbl_rss);
 		add_option("wplc_date_format", "M j, Y g:ia");
 		add_option("wplc_display_mode", "list");
 		add_option("wplc_event_format", "<strong>%LINKEDNAME%</strong> &mdash; %START% - %END%\n<div style='margin-left:20px;'>%DESCRIPTION%</div>");
@@ -133,6 +180,12 @@ if(!$wplc_is_included) {
 		add_option("wplc_nofollow_links", true);
 		add_option("wplc_no_events_msg", "");
 		add_option("wplc_widget_title", __("Upcoming Events", $wplc_domain));
+		//add_option("wplc_default_rss_link", $siteurl);
+		
+		// Get plugin url
+		// .....
+		$plugin_url = "";
+		add_option("wplc_plugin_url", $plugin_url);
 		
 		wplc_init_upload_dir_settings();
 		
@@ -195,7 +248,10 @@ if(!$wplc_is_included) {
 	// Parameters (all optional - defaults are defined on the options page):
 	// display_mode (string): Either "list" or "table"
 	// event_format (string): The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%,
-	//    %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR% to include event data
+	//    %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR% to include event data. You can also make
+	//	  statements dependent on a variable by wrapping them in curly brackets (ex. {Date: %START%}). The
+	//	  first variable in the brackets decides whether the statement prints or not. Use '^' to escape
+	//	  brackets.
 	// date_format (string): The format for dates/times. Use the PHP date() format just like
 	//	  Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
 	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
@@ -236,61 +292,124 @@ if(!$wplc_is_included) {
 
 		$tbl_name = get_option("wplc_tbl_name");
 	
-		// Get events from DB
-		$whered = false;
-		$sql = "SELECT e.id as id,
-					e.event_name as event_name,
-					e.event_link as event_link,
-					e.event_loc as event_loc,
-					e.event_desc as event_desc,
-					e.event_start_time as event_start_time,
-					e.event_end_time as event_end_time,
-					e.event_allday as event_allday";
-		
-		// Check if the format contains the author variable to decide whether to do the join or not
-		$needuserjoin = false;
-		if(strpos($event_format, "%AUTHOR%") > -1) {
-			$sql .= ", u.display_name as event_author";
-			$needuserjoin = true;
-		}
-		
-		$sql .= " FROM $tbl_name e";
-		
-		if($needuserjoin) {
-			$sql .= " LEFT JOIN $wpdb->users u ON e.event_author = u.ID";
-		}
-		
-		if(!$show_past_events) {
-			$sql .= " WHERE e.event_end_time >= ".time();
-			$whered = true;
-		}
-		if($advance_days > -1) {
-			if($whered) {
-				$sql .= " AND ";
-			}
-			else {
-				$sql .= " WHERE ";
-				$whered = true;
-			}
-			
-			$sql .= "e.event_start_time < ".(time() + ($advance_days * 3600 * 24));
-		}
-		
-		if($event_order == "asc") {
-			$order = "ASC";
-		}
-		else {
-			$order = "DESC";
-		}
-		
-		$sql .= " ORDER BY e.event_start_time ".$order.", e.event_end_time ".$order;
-		
-		if($max_events > -1)
-			$sql .= " LIMIT ".$max_events;
-		$events = $wpdb->get_results($wpdb->escape($sql), ARRAY_A);
+		$events = wplc_get_events($event_format, $max_events, $advance_days, $show_past_events, $event_order);
 		
 		if(!empty($no_events_msg) && count($events) == 0) {
 			return $no_events_msg;
+		}
+		
+		$variable_check = array(
+			"%NAME%" => true,
+			"%LINK%" => true,
+			"%LINKEDNAME%" => true,
+			"%LOCATION%" => true,
+			"%DESCRIPTION%" => true,
+			"%START%" => true,
+			"%END%" => true,
+			"%ID%" => true,
+			"%AUTHOR%" => true
+		);
+		
+		$indented = false;
+		$token = "";
+		$dependent = "";
+		$input = $event_format;
+		$reading_variable = false;
+		$reading_hidden_variable = false;
+		$tokens = array();
+		
+		// Scan the event format for bracketed variables
+		for($i=0, $len = strlen($input); $i<$len; $i++)
+		{
+			$ch = $input[$i];
+			
+			if($ch == "^") {
+				if($i == $len-1) {
+					die(sprintf(__("Cannot parse event format: unexpected escape character [ch %d]", $wplc_domain), $i));
+				}
+				switch($input[$i+1]) {
+					case "{":
+					case "}":
+					case "%":
+					case "[":
+					case "]":
+						$token .= $input[$i+1];
+						$i++; // skip next character
+						break;
+					default:
+						die(sprintf(__("Cannot parse event format: unexpected escape character [ch %d]", $wplc_domain), $i));
+				}
+			}
+			elseif($ch == "{") {
+				if($indented) {
+					die(sprintf(__("Cannot parse event format: unexpected beginning bracket (no nested tokens allowed) [ch %d]", $wplc_domain), $i));
+				}
+				
+				if(!empty($token)) {
+					$tokens[] = new FormatToken($token);
+					$token = "";
+				}
+				$indented = true;
+			}
+			elseif($ch == "[") {
+				if($reading_hidden_variable) {
+					die(sprintf(__("Cannot parse event format: unexpected beginning bracket (no nested hidden variables allowed) [ch %d]", $wplc_domain), $i));
+				}
+				
+				$reading_hidden_variable = true;
+			}
+			elseif($ch == "%" && !$reading_variable && $indented && empty($dependent)) {
+				$reading_variable = true;
+				$dependent .= $ch;
+				
+				if(!$reading_hidden_variable)
+					$token .= $ch;
+			}
+			elseif($ch == "}") {
+				if(!$indented) {
+					die(sprintf(__("Cannot parse event format: unexpected end bracket [ch %d]", $wplc_domain), $i));
+				}
+				if($reading_variable || $reading_hidden_variable) {
+					die(sprintf(__("Cannot parse event format: unexpected end of bracketed token [ch %d]", $wplc_domain), $i));
+				}
+				if(empty($dependent)) {
+					die(sprintf(__("Cannot parse event format: missing dependent variable [ch %d]", $wplc_domain), $i));
+				}
+				if(!$variable_check[$dependent]) {
+					die(sprintf(__("Cannot parse event format: invalid dependent variable %s [ch %d]", $wplc_domain), $dependent, $i));
+				}
+				
+				$tokens[] = new FormatToken($token, $dependent);
+				
+				$token = "";
+				$dependent = "";
+				$indented = false;
+			}
+			elseif($ch == "]") {
+				if(!$reading_hidden_variable) {
+					die(sprintf(__("Cannot parse event format: unexpected end bracket [ch %d]", $wplc_domain), $i));
+				}
+				if($reading_variable) {
+					die(sprintf(__("Cannot parse event format: unexpected end of hidden variable token [ch %d]", $wplc_domain), $i));
+				}
+				
+				$reading_hidden_variable = false;
+			}
+			else {
+				if(!$reading_hidden_variable) {
+					$token .= $ch;
+				}
+				if($reading_variable) {
+					$dependent .= $ch;
+					if($ch == "%") {
+						$reading_variable = false;
+					}
+				}
+			}
+		}
+		
+		if(!empty($token)) {
+			$tokens[] = new FormatToken($token);
 		}
 	
 		// Print events
@@ -298,7 +417,7 @@ if(!$wplc_is_included) {
 			$ret = "<ul class='wplc_event_list'>\n";
 		elseif($display_mode == "table")
 			$ret = "<table class='wplc_table'><tbody>";
-		for($i=0; $i<count($events); $i++) {
+		for($i=0, $len=count($events); $i<$len; $i++) {
 			// Prepare event string
 			$start = date($date_format, $events[$i]['event_start_time']);
 			$end = date($date_format, $events[$i]['event_end_time']);
@@ -321,7 +440,28 @@ if(!$wplc_is_included) {
 			$cleaned_author = is_null($events[$i]['event_author']) ? __("N/A", $wplc_domain) : str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_author']))));
 		
 			if($display_mode == "list") {
-				$evt = str_replace("%NAME%", $cleaned_name, $event_format);
+				$variable_check_map = array(
+					"%NAME%" => $cleaned_name,
+					"%LINK%" => $cleaned_link,
+					"%LINKEDNAME%" => $cleaned_name, // linked name will always have text in it, but we care about the actual name
+					"%LOCATION%" => $events[$i]['event_loc'],
+					"%DESCRIPTION%" => $cleaned_desc,
+					"%START%" => $start,
+					"%END%" => $end,
+					"%ID%" => $events[$i]['id'],
+					"%AUTHOR%" => $cleaned_author
+				);
+				
+				$output = "";
+				for($j=0; $j<count($tokens); $j++) {
+					$token = $tokens[$j];
+					if(null === $token->dependent ||
+						!empty($variable_check_map[$token->dependent])) {
+						$output .= $token->string;
+					}
+				}
+				
+				$evt = str_replace("%NAME%", $cleaned_name, $output);
 				$evt = str_replace("%LINK%", $cleaned_link, $evt);
 				$evt = str_replace("%LINKEDNAME%", $linked_name, $evt);
 				$evt = str_replace("%LOCATION%", $cleaned_loc, $evt);
@@ -357,8 +497,104 @@ if(!$wplc_is_included) {
 		return str_ireplace("<!--wplistcal-->", wplc_show_events(), $content);
 	}
 	
+	// [wplistcal display_mode="list", event_format="%NAME%", date_format="M j, Y g:ia", max_events="-1", show_past_events="false", advance_days="-1", event_order="asc", hide_same_date="true", date2_time_format="g:ia", no_events_msg="No events!"]
+	function wplc_shortcode($atts) {
+		extract(shortcode_atts(array(
+			"display_mode"		=> null,
+			"event_format"		=> null,
+			"date_format"		=> null,
+			"max_events"		=> null,
+			"show_past_events"	=> null,
+			"advance_days"		=> null,
+			"event_order"		=> null,
+			"hide_same_date"	=> null,
+			"date2_time_format" => null,
+			"no_events_msg"		=> null
+		), $atts), EXTR_PREFIX_ALL, "shortcode");
+		
+		return wplc_show_events($shortcode_display_mode,
+			                    $shortcode_event_format,
+			                    $shortcode_date_format,
+			                    $shortcode_max_events,
+			                    $shortcode_show_past_events,
+			                    $shortcode_advance_days,
+			                    $shortcode_event_order,
+			                    $shortcode_hide_same_date,
+			                    $shortcode_date2_time_format,
+			                    $shortcode_no_events_msg);
+	}
+	add_shortcode("wplistcal", "wplc_shortcode");
+	
+	function wplc_get_events($event_format, $max_events, $advance_days, $show_past_events, $event_order) {
+		global $wpdb;
+		
+		$tbl_name = get_option("wplc_tbl_name");
+		$event_order_lower = strtolower($event_order);
+		
+		if(empty($event_format) ||
+			is_null(max_events) ||
+			($event_order_lower != "asc" && $event_order_lower != "desc"))
+		{
+			return array();
+		}
+		
+		// Get events from DB
+		$whered = false;
+		$sql = "SELECT e.id as id,
+					e.event_name as event_name,
+					e.event_link as event_link,
+					e.event_loc as event_loc,
+					e.event_desc as event_desc,
+					e.event_start_time as event_start_time,
+					e.event_end_time as event_end_time,
+					e.event_allday as event_allday";
+		
+		// Check if the format contains the author variable to decide whether to do the join or not
+		$needuserjoin = false;
+		if(strpos($event_format, "%AUTHOR%") > -1) {
+			$sql .= ", u.display_name as event_author";
+			$needuserjoin = true;
+		}
+		
+		$sql .= " FROM $tbl_name e";
+		
+		if($needuserjoin) {
+			$sql .= " LEFT JOIN $wpdb->users u ON e.event_author = u.ID";
+		}
+		
+		if(!$show_past_events) {
+			$sql .= " WHERE e.event_end_time >= ".wplc_time();
+			$whered = true;
+		}
+		if($advance_days > -1) {
+			if($whered) {
+				$sql .= " AND ";
+			}
+			else {
+				$sql .= " WHERE ";
+				$whered = true;
+			}
+			
+			$sql .= "e.event_start_time < ".(wplc_time() + ($advance_days * 3600 * 24));
+		}
+		
+		if($event_order_lower == "asc") {
+			$order = "ASC";
+		}
+		else {
+			$order = "DESC";
+		}
+		
+		$sql .= " ORDER BY e.event_start_time ".$order.", e.event_end_time ".$order;
+		
+		if($max_events > -1)
+			$sql .= " LIMIT ".$max_events;
+		return $wpdb->get_results($wpdb->escape($sql), ARRAY_A);
+	}
+	
 	require_once("utility.inc.php");
 	require_once("admin.inc.php");
 	require_once("importexport.inc.php");
+	//require_once("rss.inc.php");
 }
 ?>

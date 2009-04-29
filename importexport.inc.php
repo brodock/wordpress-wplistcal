@@ -43,7 +43,7 @@ if(version_compare(phpversion(), '5.1.0') == 1) {
 	set_tz_by_offset(get_option("gmt_offset"));
 }
 
-require_once("iCalcreator.class.php");
+require_once("lib/iCalcreator.class.php");
 
 function wplc_export_events($id=null) {
 	global $wpdb;
@@ -131,7 +131,7 @@ function wplc_import_events($file) {
 		$end = wplc_ical_array_to_time($ev->getProperty("dtend"));
 		$description = $wpdb->escape(wplc_br2nl(addslashes($ev->getProperty("description"))));
 		$create = wplc_ical_array_to_time($ev->getProperty("created"));
-		$modified = time();
+		$modified = wplc_time();
 		
 		$author = $current_user->user_login;
 		
