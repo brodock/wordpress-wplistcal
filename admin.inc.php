@@ -458,8 +458,6 @@ function wplc_add_admin_pages() {
 	//add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), "import", "wplc-import", "wplc_show_import_page");
 	add_submenu_page($wplc_plugin, __("Export Events", $wplc_domain), __("Export", $wplc_domain), "read", "wplc-export", "wplc_show_export_page");
 	add_submenu_page($wplc_plugin, __("Cleanup Events", $wplc_domain), __("Cleanup", $wplc_domain), "delete_posts", "wplc-cleanup", "wplc_show_admin_cleanup_page");
-	// TODO: Get needed user level for RSS
-	//add_submenu_page($wplc_plugin, __("Manage RSS", $wplc_domain), __("RSS", $wplc_domain), "********************** SOMETHING!", "wplc-rss", "wplc_show_admin_rss_page");
 	add_options_page(__("WPListCal Settings", $wplc_domain), __("WPListCal", $wplc_domain), "manage_options", "wplc-options", "wplc_show_admin_options_page");
 }
 
@@ -905,7 +903,7 @@ Put words into curly brackets to make them dependent on the first variable in th
 					<th scope="row"><?php _e("Date/Time Format:", $wplc_domain); ?></th>
 					<td>
 						<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" class="regular-text" />
-						<span class="setting-description"><a href="http://codex.wordpress.org/Formatting_Date_and_Time"><?php _e("Documentation on date formatting", $wplc_domain); ?></a>. <?php _e("Click &quot;Update Options&quot; to update sample output.", $wplc_domain); ?></span>
+						<span class="setting-description"><a href="http://codex.wordpress.org/Formatting_Date_and_Time"><?php _e("Documentation on date formatting", $wplc_domain); ?></a>. <?php _e("Click &quot;Save Changes&quot; to update sample output.", $wplc_domain); ?></span>
 						<br />
 						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), wplc_time()); ?>
 					</td>
@@ -926,12 +924,13 @@ Put words into curly brackets to make them dependent on the first variable in th
 					<th scope="row"><?php _e("End Date Options:", $wplc_domain); ?></th>
 					<td>
 						<input type="radio" name="wplc_hide_same_date" value="true" id="wplc_hide_same_date_true" onclick="wplc_changeDisabled('wplc_date2_time_format', false);"<?php echo $hide_same_date ? "checked='checked'" : ""; ?> />
-							<label for="wplc_hide_same_date_true"><?php _e("If even starts and ends on the same day, use the time format below for the end date <em>(Default)</em>", $wplc_domain); ?></label>
+							<label for="wplc_hide_same_date_true"><?php _e("If event starts and ends on the same day, use the time format below for the end date <em>(Default)</em>", $wplc_domain); ?></label>
 						<br />
 						<fieldset style="margin-left: 25px;border:none;">
 							<legend style="float:left; margin-top:2px;"><?php _e("End Date Format", $wplc_domain); ?>:</legend>
 							<div>
 								<input type="text" name="wplc_date2_time_format" id="wplc_date2_time_format" value="<?php echo get_option('wplc_date2_time_format'); ?>"<?php echo $hide_same_date ? "" : "disabled='disabled'"; ?> class="small-text" />
+								<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date2_time_format'), wplc_time()); ?>
 							</div>
 						</fieldset>
 						<input type="radio" name="wplc_hide_same_date" value="false" id="wplc_hide_same_date_false" onclick="wplc_changeDisabled('wplc_date2_time_format', true);"<?php echo $hide_same_date ? "" : "checked='checked'"; ?> />

@@ -168,7 +168,7 @@ function wplc_is_wplc_page() {
 	}
 }
 
-function dbg_print_array(&$array) {
+function wplc_dbg_print_array(&$array) {
 	echo "<pre>";
 	print_r($array);
 	echo "</pre>";

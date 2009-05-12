@@ -77,7 +77,6 @@ if(!$wplc_is_included) {
 		$siteurl = get_bloginfo("siteurl");
 	
 		$tbl_name = $wpdb->prefix."wplistcal";
-		$tbl_rss = $wpdb->prefix."wplistcal_rss";
 	
 		// Check if DB exists and add it if necessary
 		if($wpdb->get_var("SHOW TABLES LIKE '$tbl_name'") != $tbl_name) {
@@ -117,49 +116,6 @@ if(!$wplc_is_included) {
 							  '".$wpdb->escape($current_user->ID)."');";
 			$wpdb->query($insert);
 		}
-		/*// The 1.1 -> 1.2 upgrade will hit this codepath since tbl_rss
-		// won't exist yet, so no need to add an upgrade action.
-		if($wpdb->get_var("SHOW TABLES LIKE '$tbl_rss'") != $tbl_rss) {
-			$sql = "CREATE TABLE ".$tbl_rss."(
-				id INT NOT NULL AUTO_INCREMENT,
-				feed_title VARCHAR(255) NOT NULL,
-				feed_description TEXT NOT NULL,
-				feed_link TEXT NOT NULL,
-				feed_icon_url TEXT,
-				event_format TEXT,
-				date_format VARCHAR(255),
-				max_events INT DEFAULT -1,
-				advanced_days INT DEFAULT -1,
-				date2_time_format VARCHAR(255),
-				feed_flags INT DEFAULT 0 NOT NULL,
-				PRIMARY KEY  id (id)
-			);";
-		
-			require_once(ABSPATH.'wp-admin/upgrade-functions.php');
-			dbDelta($sql);
-		
-			// Add dummy data
-			$blog_title = get_bloginfo("name");
-			$default_feed_title = $blog_title." Calendar Feed";
-			$default_feed_description = "Events from $blog_title";
-			$default_feed_link = $siteurl;
-			$default_event_format = "%START% - %END%: %DESCRIPTION%";
-			$default_date_format = "M j, Y g:ia";
-			$default_date2_time_format = "g:ia";
-			$default_feed_flags = WPLC_RSS_HIDESAMEDATE;
-		
-			$insert = "INSERT INTO ".$tbl_rss.
-					  " (feed_title, feed_description, feed_link, event_format,
-							date_format, date2_time_format, feed_flags) ".
-					  "VALUES('".$wpdb->escape($default_feed_title)."',
-							  '".$wpdb->escape($default_feed_description)."',
-							  '".$wpdb->escape($default_feed_link)."',
-							  '".$wpdb->escape($default_event_format)."',
-							  '".$wpdb->escape($default_date_format)."',
-							  '".$wpdb->escape($default_date2_time_format)."',
-							  ".$wpdb->escape($default_feed_flags).");";
-			$wpdb->query($insert);
-		}*/
 		
 		// If an option already exists, these functions do nothing
 		add_option("wplc_db_version", WPLC_DB_VERSION);
@@ -167,7 +123,7 @@ if(!$wplc_is_included) {
 		add_option("wplc_tbl_rss", $tbl_rss);
 		add_option("wplc_date_format", "M j, Y g:ia");
 		add_option("wplc_display_mode", "list");
-		add_option("wplc_event_format", "<strong>%LINKEDNAME%</strong> &mdash; %START% - %END%\n<div style='margin-left:20px;'>%DESCRIPTION%</div>");
+		add_option("wplc_event_format", "<strong>%LINKEDNAME%</strong> &mdash; %START% - %END%{\n<div style='margin-left:20px;'>%DESCRIPTION%</div>}");
 		add_option("wplc_max_events", -1);
 		add_option("wplc_advance_days", -1);
 		add_option("wplc_show_past_events", false);
@@ -180,12 +136,6 @@ if(!$wplc_is_included) {
 		add_option("wplc_nofollow_links", true);
 		add_option("wplc_no_events_msg", "");
 		add_option("wplc_widget_title", __("Upcoming Events", $wplc_domain));
-		//add_option("wplc_default_rss_link", $siteurl);
-		
-		// Get plugin url
-		// .....
-		$plugin_url = "";
-		add_option("wplc_plugin_url", $plugin_url);
 		
 		wplc_init_upload_dir_settings();
 		
@@ -250,8 +200,9 @@ if(!$wplc_is_included) {
 	// event_format (string): The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%,
 	//    %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR% to include event data. You can also make
 	//	  statements dependent on a variable by wrapping them in curly brackets (ex. {Date: %START%}). The
-	//	  first variable in the brackets decides whether the statement prints or not. Use '^' to escape
-	//	  brackets.
+	//	  first variable in the brackets decides whether the statement prints or not. Wrap a variable in
+	//	  square brackets (ex. [%DESCRIPTION%] to make it dependent but hidden. Use '^' to escape both
+	//	  types of brackets and variables (ex. {Foo ^%VAR^% ^[^%NOTDEPENDENT^%^] [%DEPENDENT%]}).
 	// date_format (string): The format for dates/times. Use the PHP date() format just like
 	//	  Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
 	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
@@ -453,10 +404,10 @@ if(!$wplc_is_included) {
 				);
 				
 				$output = "";
-				for($j=0; $j<count($tokens); $j++) {
+				for($j=0, $len2=count($tokens); $j<$len2; $j++) {
 					$token = $tokens[$j];
 					if(null === $token->dependent ||
-						!empty($variable_check_map[$token->dependent])) {
+					  !empty($variable_check_map[$token->dependent])) {
 						$output .= $token->string;
 					}
 				}
@@ -492,6 +443,7 @@ if(!$wplc_is_included) {
 	}
 	
 	// Content filter to place a calendar on a post or page
+	// Deprecated -- use the shortcode instead ([wplistcal] does the same thing as <!--wplistcal-->)
 	add_filter("the_content", "wplc_content_filter");
 	function wplc_content_filter($content) {
 		return str_ireplace("<!--wplistcal-->", wplc_show_events(), $content);
@@ -595,6 +547,5 @@ if(!$wplc_is_included) {
 	require_once("utility.inc.php");
 	require_once("admin.inc.php");
 	require_once("importexport.inc.php");
-	//require_once("rss.inc.php");
 }
 ?>
