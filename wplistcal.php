@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.2
+Version: 1.2.1
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -243,7 +243,7 @@ if(!$wplc_is_included) {
 
 		$tbl_name = get_option("wplc_tbl_name");
 	
-		$events = wplc_get_events($event_format, $max_events, $advance_days, $show_past_events, $event_order);
+		$events = wplc_get_events($display_mode, $event_format, $max_events, $advance_days, $show_past_events, $event_order);
 		
 		if(!empty($no_events_msg) && count($events) == 0) {
 			return $no_events_msg;
@@ -477,13 +477,13 @@ if(!$wplc_is_included) {
 	}
 	add_shortcode("wplistcal", "wplc_shortcode");
 	
-	function wplc_get_events($event_format, $max_events, $advance_days, $show_past_events, $event_order) {
+	function wplc_get_events($display_mode, $event_format, $max_events, $advance_days, $show_past_events, $event_order) {
 		global $wpdb;
 		
 		$tbl_name = get_option("wplc_tbl_name");
 		$event_order_lower = strtolower($event_order);
 		
-		if(empty($event_format) ||
+		if(($display_mode == "list" && empty($event_format)) ||
 			is_null(max_events) ||
 			($event_order_lower != "asc" && $event_order_lower != "desc"))
 		{
