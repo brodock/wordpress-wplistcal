@@ -130,10 +130,10 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 		<form name="event" id="event" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
 			<input type="hidden" id="user-id" name="user_ID" value="<?php echo (int) $user_ID ?>" />
 			<div id="poststuff">
-				<div style="position:relative;">
+				<div style="position:relative;" class="has-right-sidebar">
 					<div class="inner-sidebar">
 						<div class="postbox" id="submitdiv">
-							<h3 class="hndle">
+							<h3 class="wplc_plaincursor">
 								<span><?php _e('Publish', $wplc_domain); ?></span>
 							</h3>
 							<div class="inside">
@@ -141,16 +141,16 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 									<div id="minor-publishing">
 										<?php if($editing) { ?>
 											<div class="misc-pub-section">
-												<label><?php _e("Author:", $wplc_domain); ?></label>
+												<label class="wplc_baseline"><?php _e("Author:", $wplc_domain); ?></label>
 												<b><?php echo $author; ?></b>
 											</div>
 											<div class="misc-pub-section">
-												<label><?php _e("Published on:", $wplc_domain); ?></label>
+												<label class="wplc_baseline"><?php _e("Published on:", $wplc_domain); ?></label>
 												<b><?php echo $create_time; ?></b>
 											</div>
 											<?php if($create_time != $modified_time) { ?>
 												<div class="misc-pub-section">
-													<label><?php _e("Modified on:", $wplc_domain); ?></label>
+													<label class="wplc_baseline"><?php _e("Modified on:", $wplc_domain); ?></label>
 													<b><?php echo $modified_time; ?></b>
 												</div>
 											<?php } ?>
@@ -195,7 +195,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 						}
 						?>
 						<div id="titlediv-noformat" class="postbox">
-							<h3 class="hndle"><?php _e('Title', $wplc_domain); ?></h3>
+							<h3 class="wplc_plaincursor"><?php _e('Title', $wplc_domain); ?></h3>
 							<div id="titlewrap-noformat" class="inside">
 								<label class="hidden" for="title-noformat">Title</label>
 								<input type="text" name="event_name" size="30" tabindex="1" value="<?php echo stripslashes(stripslashes($event['event_name'])); ?>" id="title-noformat" />
@@ -203,7 +203,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 						</div>
 						
 						<div id="locdiv" class="postbox">
-							<h3 class="hndle"><?php _e('Location', $wplc_domain); ?></h3>
+							<h3 class="wplc_plaincursor"><?php _e('Location', $wplc_domain); ?></h3>
 							<div id="locwrap" class="inside">
 								<label class="hidden" for="location">Location</label>
 								<input type="text" name="event_loc" size="30" tabindex="2" value="<?php echo stripslashes(stripslashes($event['event_loc'])); ?>" id="location" />
@@ -211,7 +211,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 						</div>
 					
 						<div id="linkdiv" class="postbox">
-							<h3 class="hndle"><?php _e('Link', $wplc_domain); ?></h3>
+							<h3 class="wplc_plaincursor"><?php _e('Link', $wplc_domain); ?></h3>
 							<div id="linkwrap" class="inside">
 								<label class="hidden" for="link">Link</label>
 								<input type="text" name="event_link" size="30" tabindex="2" value="<?php echo stripslashes(stripslashes($event['event_link'])); ?>" id="link" />
@@ -219,7 +219,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 						</div>
 
 						<div id="startdiv" class="postbox">
-							<h3 class="hndle"><?php _e('Date/Time', $wplc_domain); ?></h3>
+							<h3 class="wplc_plaincursor"><?php _e('Date/Time', $wplc_domain); ?></h3>
 							<div id="startwrap" class="inside">
 								<div style="clear:both;float:none;">
 									<label class="wplc_date_label">Start:</label>

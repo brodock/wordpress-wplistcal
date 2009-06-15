@@ -147,6 +147,12 @@ function wplc_admin_css() {
 			padding:1px 2px;
 			text-decoration:none;
 		}
+		.wplc_baseline {
+			vertical-align:baseline;
+		}
+		.wplc_plaincursor {
+			cursor:default !important;
+		}
 	</style>
 	<?php
 }
