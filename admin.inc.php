@@ -456,8 +456,7 @@ function wplc_add_admin_pages() {
 	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), "edit_posts", "wplc-edit", "wplc_show_admin_manage_page");
 	// Import not ready for release
 	//add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), "import", "wplc-import", "wplc_show_import_page");
-	add_submenu_page($wplc_plugin, __("Export Events", $wplc_domain), __("Export", $wplc_domain), "read", "wplc-export", "wplc_show_export_page");
-	add_submenu_page($wplc_plugin, __("Cleanup Events", $wplc_domain), __("Cleanup", $wplc_domain), "delete_posts", "wplc-cleanup", "wplc_show_admin_cleanup_page");
+	add_submenu_page($wplc_plugin, __("Event Operations", $wplc_domain), __("Operations", $wplc_domain), "read", "wplc-ops", "wplc_show_admin_operations_page");
 	add_options_page(__("WPListCal Settings", $wplc_domain), __("WPListCal", $wplc_domain), "manage_options", "wplc-options", "wplc_show_admin_options_page");
 }
 
@@ -784,30 +783,13 @@ function wplc_show_import_page() {
 	<?php
 }
 
-function wplc_show_export_page() {
+function wplc_show_admin_operations_page() {
 	wplc_setup();
 	global $wplc_domain;
 	
-	?>
-	<div class="wrap">
-		<h2><?php _e("Export Events", $wplc_domain); ?></h2>
-		<p>
-			<?php printf(__("WPListCal can save your events in the standard iCalendar format. Events are stored in the timezone that your blog is set to use. All events are exported at once, past and future. If you'd like to export a single event, go to the %smanage events%s page and click &quot;Export&quot; near the event you want to export.", $wplc_domain), "<a href='admin.php?page=wplc-edit'>", "</a>"); ?>
-		</p>
-		<h3><a href="admin.php?page=wplc-export&amp;op=export"><?php _e("Export events &raquo;", $wplc_domain); ?></a></h3>
-	</div>
-	<?php
+	$can_cleanup = current_user_can("delete_posts");
 	
-	if($_GET['op'] == "export") {
-		wplc_export_events();
-	}
-}
-
-function wplc_show_admin_cleanup_page() {
-	wplc_setup();
-	global $wplc_domain;
-	
-	if($_GET['op'] == "cleanup") {
+	if($_GET['op'] == "cleanup" && $can_cleanup) {
 		$num = wplc_cleanup_events();
 		if($num > 0) {
 			$message = sprintf(__("%d old ".($num == 1 ? "event" : "events")." deleted.", $wplc_domain), $num);
@@ -831,13 +813,29 @@ function wplc_show_admin_cleanup_page() {
 	}
 	?>
 	<div class="wrap">
-		<h2><?php _e("Cleanup Events", $wplc_domain); ?></h2>
+		<h2><?php _e("Export Events", $wplc_domain); ?></h2>
 		<p>
-			<?php _e("Have a bunch of old events sitting around? Click below to delete all events that have ended already. Note that this operation CANNOT be undone.", $wplc_domain); ?>
+			<?php printf(__("WPListCal can save your events in the standard iCalendar format. Events are stored in the timezone that your blog is set to use. All events are exported at once, past and future. If you'd like to export a single event, go to the %smanage events%s page and click &quot;Export&quot; near the event you want to export.", $wplc_domain), "<a href='admin.php?page=wplc-edit'>", "</a>"); ?>
 		</p>
-		<h3><a href="admin.php?page=wplc-cleanup&amp;op=cleanup" onclick="return confirm('<?php _e("Are you sure you want to delete all past events?", $wplc_domain); ?>');"><?php _e("Cleanup events &raquo;", $wplc_domain); ?></a></h3>
+		<h3><a href="admin.php?page=wplc-export&amp;op=export"><?php _e("Export events &raquo;", $wplc_domain); ?></a></h3>
+		
+		<?php
+		if($can_cleanup) :
+		?>
+			<h2><?php _e("Cleanup Events", $wplc_domain); ?></h2>
+			<p>
+				<?php _e("Have a bunch of old events sitting around? Click below to delete all events that have ended already. Note that this operation CANNOT be undone.", $wplc_domain); ?>
+			</p>
+			<h3><a href="admin.php?page=wplc-cleanup&amp;op=cleanup" onclick="return confirm('<?php _e("Are you sure you want to delete all past events?", $wplc_domain); ?>');"><?php _e("Cleanup events &raquo;", $wplc_domain); ?></a></h3>
+		<?php
+		endif;
+		?>
 	</div>
 	<?php
+	
+	if($_GET['op'] == "export") {
+		wplc_export_events();
+	}
 }
 
 function wplc_cleanup_events() {

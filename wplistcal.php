@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.2.2
+Version: 1.3
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -189,20 +189,34 @@ if(!$wplc_is_included) {
 		$dir = trailingslashit($dir);
 		$url = trailingslashit($url);
 		
+		delete_option("wplc_upload_dir");
+		delete_option("wplc_upload_url");
+		
 		add_option("wplc_upload_dir", $dir);
 		add_option("wplc_upload_url", $url);
 	}
+	
+	function wplc_request_handler() {
+		$op = $_GET['op'];
+		
+		switch($op) {
+			case "wplcexport":
+				wplc_handle_export();
+				break;
+		}
+	}
+	add_action("init", "wplc_request_handler");
 
 	// Show the event list
 	//----------------------------------------------------------------------------------------------
 	// Parameters (all optional - defaults are defined on the options page):
 	// display_mode (string): Either "list" or "table"
 	// event_format (string): The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%,
-	//    %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR% to include event data. You can also make
-	//	  statements dependent on a variable by wrapping them in curly brackets (ex. {Date: %START%}). The
-	//	  first variable in the brackets decides whether the statement prints or not. Wrap a variable in
-	//	  square brackets (ex. [%DESCRIPTION%] to make it dependent but hidden. Use '^' to escape both
-	//	  types of brackets and variables (ex. {Foo ^%VAR^% ^[^%NOTDEPENDENT^%^] [%DEPENDENT%]}).
+	//    %LOCATION%, %DESCRIPTION%, %START%, %END%, %AUTHOR%, and %EXPORTURL% to include event data. You
+	//	  can also make statements dependent on a variable by wrapping them in curly brackets
+	//	  (ex. {Date: %START%}). The first variable in the brackets decides whether the statement prints 
+	//	  or not. Wrap a variable insquare brackets (ex. [%DESCRIPTION%] to make it dependent but hidden. 
+	//	  Use '^' to escape bothtypes of brackets and variables (ex. {Foo ^%VAR^% ^[^%NOTDEPENDENT^%^] [%DEPENDENT%]}).
 	// date_format (string): The format for dates/times. Use the PHP date() format just like
 	//	  Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
 	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
@@ -242,6 +256,7 @@ if(!$wplc_is_included) {
 		}
 
 		$tbl_name = get_option("wplc_tbl_name");
+		$siteurl = get_option("siteurl");
 	
 		$events = wplc_get_events($display_mode, $event_format, $max_events, $advance_days, $show_past_events, $event_order);
 		
@@ -258,7 +273,8 @@ if(!$wplc_is_included) {
 			"%START%" => true,
 			"%END%" => true,
 			"%ID%" => true,
-			"%AUTHOR%" => true
+			"%AUTHOR%" => true,
+			"%EXPORTURL%" => true
 		);
 		
 		$indented = false;
@@ -389,6 +405,7 @@ if(!$wplc_is_included) {
 			$nofollow = get_option("wplc_nofollow_links") == "true" ? " rel='nofollow'" : "";
 			$linked_name = empty($cleaned_link) ? $cleaned_name : "<a href='".$cleaned_link."'".$target.$nofollow.">".$cleaned_name."</a>";
 			$cleaned_author = is_null($events[$i]['event_author']) ? __("N/A", $wplc_domain) : str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_author']))));
+			$export_url = $siteurl."?op=wplcexport&id=".$events[$i]['id'];
 		
 			if($display_mode == "list") {
 				$variable_check_map = array(
@@ -400,7 +417,8 @@ if(!$wplc_is_included) {
 					"%START%" => $start,
 					"%END%" => $end,
 					"%ID%" => $events[$i]['id'],
-					"%AUTHOR%" => $cleaned_author
+					"%AUTHOR%" => $cleaned_author,
+					"%EXPORTURL%" => $export_url
 				);
 				
 				$output = "";
@@ -421,6 +439,7 @@ if(!$wplc_is_included) {
 				$evt = str_replace("%END%", $end, $evt);
 				$evt = str_replace("%ID%", $events[$i]['id'], $evt);
 				$evt = str_replace("%AUTHOR%", $cleaned_author, $evt);
+				$evt = str_replace("%EXPORTURL%", $export_url, $evt);
 				$ret .= "<li".(($i % 2 == 1) ? " class='wplc_alt'" : "").">".$evt."</li>";
 			}
 			elseif($display_mode == "table") {

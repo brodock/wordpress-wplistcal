@@ -45,7 +45,19 @@ if(version_compare(phpversion(), '5.1.0') == 1) {
 
 require_once("lib/iCalcreator.class.php");
 
-function wplc_export_events($id=null) {
+function wplc_handle_export() {
+	global $wplc_domain;
+	wplc_setup();
+
+	$id = $_GET['id'];
+	
+	if(is_null($id) || empty($id))
+		die(__("Must pass id parameter for export", $wplc_domain));
+	
+	wplc_export_events($id, true /* header_redirect */);
+}
+
+function wplc_export_events($id=null, $header_redirect=false) {
 	global $wpdb;
 	
 	$blog_title = get_bloginfo("name");
@@ -97,11 +109,18 @@ function wplc_export_events($id=null) {
 	}
 	
 	@unlink($dir."events.ics");
-	$cal->saveCalendar($dir, "events.ics");
+	if(!$cal->saveCalendar($dir, "events.ics"))
+		die(__("Calendar file creation failed", $wplc_domain));
 	
+	$icsurl = $url."events.ics";
+	
+	if($header_redirect) {
+		header("location:$icsurl");
+		exit;
+	}
 	?>
 	<script type="text/javascript" charset="utf-8">
-		window.location = '<?php echo $url."events.ics"; ?>';
+		window.location = '<?php echo $icsurl; ?>';
 	</script>
 	<?php
 }

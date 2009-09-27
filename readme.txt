@@ -3,8 +3,8 @@ Contributors: jonkern
 Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
 Requires at least: 2.7
-Tested up to: 2.8
-Stable tag: 1.2.2
+Tested up to: 2.8.4
+Stable tag: 1.3
 Text Domain: wplistcal
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
@@ -15,7 +15,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 = Version Guide =
 
-* WordPress 2.7 or later &rarr; Use WPListCal 1.2.2 (current stable release)
+* WordPress 2.7 or later &rarr; Use WPListCal 1.3 (current stable release)
 * WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.2
 * WordPress 2.0.3-2.3.3 &rarr; Use WPListCal 1.0.2
 
@@ -45,7 +45,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
     > __Display Mode__ (string): `'list'` or `'table'`
 
-    > __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %LINK%, %LINKEDNAME%, %START%, %END%, %DESCRIPTION%. You can also make statements dependent on a variable by wrapping them in curly brackets (ex. {Date: %START%}). See &quot;Dependent Statements&quot; below for more information.
+    > __Event Format__ (string): The format of the list entries if Display Mode is set to `'list'`.  You can use the following variables: %NAME%, %LINK%, %LINKEDNAME%, %START%, %END%, %DESCRIPTION%, %AUTHOR%, and %EXPORTURL%. You can also make statements dependent on a variable by wrapping them in curly brackets (ex. {Date: %START%}). See &quot;Dependent Statements&quot; below for more information.
 
     > __Date Format__ (string): The format to display the start and end date and time.  Uses [the same date formatting that Wordpress uses](http://codex.wordpress.org/Formatting_Date_and_Time).
 
@@ -63,7 +63,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 	
 	> __No Events Message__ (string): If there are no events, show this string instead, leave blank for none.
 
-    > _Example:_ `<?php echo wplc_show_events('list', '%LINKEDNAME%: %START% - %END%{<br />%DESCRIPTION%}', 'M j, Y g:ia', -1, false, 30, 'asc', true, 'g:ia', 'Sorry, no events'); ?>`
+    > _Example:_ `<?php echo wplc_show_events('list', '%LINKEDNAME%: %START% - %END%{<br />%DESCRIPTION%} <a href="%EXPORTURL%">(export)</a>', 'M j, Y g:ia', -1, false, 30, 'asc', true, 'g:ia', 'Sorry, no events'); ?>`
 
 = Dependent Statements (1.2 or later only) =
 
@@ -140,6 +140,12 @@ Yes, WPListCal is packaged with iCalcreator which is released under the GNU LGPL
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.3 =
+
+* NEW: Export single events from event listing (%EXPORTURL%)
+* NEW: Refactored export and cleanup into one admin page
+* FIXED: Resolved an issue where the upload settings are not updated on each activation of the plugin
 
 = 1.2.2 =
 
