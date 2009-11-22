@@ -4,7 +4,7 @@ Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
 Requires at least: 2.7
 Tested up to: 2.8.6
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 Text Domain: wplistcal
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
@@ -15,7 +15,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 = Version Guide =
 
-* WordPress 2.7 or later &rarr; Use WPListCal 1.3.1 (current stable release)
+* WordPress 2.7 or later &rarr; Use WPListCal 1.3.2 (current stable release)
 * WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.2
 * WordPress 2.0.3-2.3.3 &rarr; Use WPListCal 1.0.2
 
@@ -140,6 +140,10 @@ Yes, WPListCal is packaged with iCalcreator which is released under the GNU LGPL
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.3.2 =
+
+* FIXED: timezone_abbreviations_list() error
 
 = 1.3.1 =
 

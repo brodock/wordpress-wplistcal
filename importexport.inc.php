@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 // If this isn't PHP5.1, we don't need this anyway
-if(version_compare(phpversion(), '5.1.0') == 1) {
+if(version_compare(phpversion(), '5.1.0') == 1 && function_exists("timezone_abbreviations_list")) {
 	function set_tz_by_offset($offset) {
 		$abbrarray = timezone_abbreviations_list();
 		foreach ($abbrarray as $abbr) {
