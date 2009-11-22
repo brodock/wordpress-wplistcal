@@ -817,7 +817,7 @@ function wplc_show_admin_operations_page() {
 		<p>
 			<?php printf(__("WPListCal can save your events in the standard iCalendar format. Events are stored in the timezone that your blog is set to use. All events are exported at once, past and future. If you'd like to export a single event, go to the %smanage events%s page and click &quot;Export&quot; near the event you want to export.", $wplc_domain), "<a href='admin.php?page=wplc-edit'>", "</a>"); ?>
 		</p>
-		<h3><a href="admin.php?page=wplc-export&amp;op=export"><?php _e("Export events &raquo;", $wplc_domain); ?></a></h3>
+		<h3><a href="admin.php?page=wplc-ops&amp;op=export"><?php _e("Export events &raquo;", $wplc_domain); ?></a></h3>
 		
 		<?php
 		if($can_cleanup) :
