@@ -4,7 +4,7 @@ Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
 Requires at least: 2.7
 Tested up to: 2.9
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 Text Domain: wplistcal
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
@@ -15,7 +15,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 = Version Guide =
 
-* WordPress 2.7 or later &rarr; Use WPListCal 1.3.3 (current stable release)
+* WordPress 2.7 or later &rarr; Use WPListCal 1.3.4 (current stable release)
 * WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.2
 * WordPress 2.0.3-2.3.3 &rarr; Use WPListCal 1.0.2
 
@@ -135,11 +135,20 @@ This is a known bug in PHP (id# [44209](http://bugs.php.net/44209)) and was fixe
 
 Yes, WPListCal is packaged with iCalcreator which is released under the GNU LGPL
 
+= My event times are all wrong after upgrading to WordPress 2.9. =
+
+Go to WordPress General settings and reset your timezone to a city rather than a manual UTC offset.
+
 = I love WPListCal, but I'd like it to do &lt;blank&gt;. =
 
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.3.4 =
+
+* FIXED: Event cleanup link was pointed incorrectly and didn't work properly
+* FIXED: Linked "events" in the dashboard to match other dashboard counters
 
 = 1.3.3 =
 

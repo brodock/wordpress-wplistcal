@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.3.3
+Version: 1.3.4
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 

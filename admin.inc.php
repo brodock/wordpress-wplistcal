@@ -479,7 +479,7 @@ function wplc_activity_box() {
 	?>
 	<tr>
 		<td class="first b b-events"><a href="admin.php?page=wplc-edit"><?php echo $num; ?></a></td>
-		<td class="t events"><?php echo __ngettext( 'Event', 'Events', $num ); ?></td>
+		<td class="t events"><a href="admin.php?page=wplc-edit"><?php echo __ngettext( 'Event', 'Events', $num ); ?></a></td>
 		<td class="b">&nbsp;</td>
 		<td class="t last">&nbsp;</td>
 	</tr>
@@ -826,7 +826,7 @@ function wplc_show_admin_operations_page() {
 			<p>
 				<?php _e("Have a bunch of old events sitting around? Click below to delete all events that have ended already. Note that this operation CANNOT be undone.", $wplc_domain); ?>
 			</p>
-			<h3><a href="admin.php?page=wplc-cleanup&amp;op=cleanup" onclick="return confirm('<?php _e("Are you sure you want to delete all past events?", $wplc_domain); ?>');"><?php _e("Cleanup events &raquo;", $wplc_domain); ?></a></h3>
+			<h3><a href="admin.php?page=wplc-ops&amp;op=cleanup" onclick="return confirm('<?php _e("Are you sure you want to delete all past events?", $wplc_domain); ?>');"><?php _e("Cleanup events &raquo;", $wplc_domain); ?></a></h3>
 		<?php
 		endif;
 		?>
