@@ -98,13 +98,13 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 			$create_time = __("N/A", $wplc_domain);
 		}
 		else {
-			$create_time = date($time_format, $event['event_create_time']);
+			$create_time = date_i18n($time_format, $event['event_create_time']);
 		}
 		if($event['event_modified_time'] == '0') {
 			$modified_time = __("N/A", $wplc_domain);
 		}
 		else {
-			$modified_time = date($time_format, $event['event_modified_time']);
+			$modified_time = date_i18n($time_format, $event['event_modified_time']);
 		}
 		
 		if($event['event_author'] == null) {
@@ -222,7 +222,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 							<h3 class="wplc_plaincursor"><?php _e('Date/Time', $wplc_domain); ?></h3>
 							<div id="startwrap" class="inside">
 								<div style="clear:both;float:none;">
-									<label class="wplc_date_label">Start:</label>
+									<label class="wplc_date_label"><?php _e('Start:', $wplc_domain); ?></label>
 									<div class="wplc_date_body">
 										<?php
 											$s[$date['event_start_month']] = " selected='selected'";
@@ -261,7 +261,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 									</div>
 								</div>
 								<div style="padding-top:15px;clear:both;float:none;">
-									<label class="wplc_date_label">End:</label>
+									<label class="wplc_date_label"><?php _e('End:', $wplc_domain); ?></label>
 									<div class="wplc_date_body">
 										<?php
 											unset($s);
@@ -450,7 +450,7 @@ function wplc_add_admin_pages() {
 	wplc_setup();
 	global $wplc_domain, $wplc_dir, $wplc_plugin;
 	
-	add_object_page(__("Events"), __("Events"), 2, $wplc_plugin, "wplc_show_admin_write_page", $wplc_dir."/icon.gif");
+	add_object_page(__("Events", $wplc_domain), __("Events", $wplc_domain), 2, $wplc_plugin, "wplc_show_admin_write_page", $wplc_dir."/icon.gif");
 	
 	add_submenu_page($wplc_plugin, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), "edit_posts", $wplc_plugin, "wplc_show_admin_write_page");
 	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), "edit_posts", "wplc-edit", "wplc_show_admin_manage_page");
@@ -591,7 +591,7 @@ function wplc_show_admin_manage_page() {
 		<h2><?php _e("Edit Events", $wplc_domain); ?></h2>
 		<div class="tablenav">
 			<div class="tablenav-pages">
-				<span class="displaying-num"><?php _e(sprintf("Displaying %d-%d of %d", $offset+1, $offset+count($events), $totalevents), $wplc_domain); ?></span>
+				<span class="displaying-num"><?php printf(__('Displaying %d-%d of %d', $wplc_domain), $offset+1, $offset+count($events), $totalevents); ?></span>
 				<?php
 				if($offset + $itemsperpage < $totalevents) {
 					echo "<a href='admin.php?wplc_pg=".($page+1)."&amp;page=wplc-edit' class='prev page-numbers'>";
@@ -628,8 +628,8 @@ function wplc_show_admin_manage_page() {
 			for($i=0; $i<count($events); $i++) {
 				$class = $i % 2 == 0 ? " class='alternate'" : "";
 				$useformat = $events[$i]['event_allday'] == 1 ? $allday_format : $dateformat;
-				$start = date($useformat, $events[$i]['event_start_time']);
-				$end = date($useformat, $events[$i]['event_end_time']);
+				$start = date_i18n($useformat, $events[$i]['event_start_time']);
+				$end = date_i18n($useformat, $events[$i]['event_end_time']);
 			?>
 
 				<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
@@ -659,7 +659,7 @@ function wplc_show_admin_manage_page() {
 		</table>
 		<div class="tablenav">
 			<div class="tablenav-pages">
-				<span class="displaying-num"><?php _e(sprintf("Displaying %d-%d of %d", $offset+1, $offset+count($events), $totalevents), $wplc_domain); ?></span>
+				<span class="displaying-num"><?php printf(__("Displaying %d-%d of %d", $wplc_domain), $offset+1, $offset+count($events), $totalevents); ?></span>
 				<?php
 				if($offset + $itemsperpage < $totalevents) {
 					echo "<a href='admin.php?wplc_pg=".($page+1)."&amp;page=wplc-edit' class='prev page-numbers'>";
@@ -792,7 +792,10 @@ function wplc_show_admin_operations_page() {
 	if($_GET['op'] == "cleanup" && $can_cleanup) {
 		$num = wplc_cleanup_events();
 		if($num > 0) {
-			$message = sprintf(__("%d old ".($num == 1 ? "event" : "events")." deleted.", $wplc_domain), $num);
+			if($num == 1)
+				$message = __("1 old event deleted.", $wplc_domain);
+			else
+				$message = sprintf(__('%d old events deleted.', $wplc_domain), $num);
 			$class = "updated";
 		}
 		elseif($num == 0) {
@@ -849,6 +852,24 @@ function wplc_cleanup_events() {
 	return $result;
 }
 
+add_action('admin_init', 'wplc_register_settings');
+function wplc_register_settings() {
+    register_setting('wplc', 'wplc_display_mode');
+	register_setting('wplc', 'wplc_event_format');
+    register_setting('wplc', 'wplc_date_format');
+    register_setting('wplc', 'wplc_use_24hr_time');
+    register_setting('wplc', 'wplc_hide_same_date');
+	register_setting('wplc', 'wplc_date2_time_format');
+    register_setting('wplc', 'wplc_max_events');
+    register_setting('wplc', 'wplc_advance_days');
+    register_setting('wplc', 'wplc_show_past_events');
+    register_setting('wplc', 'wplc_event_order');
+    register_setting('wplc', 'wplc_no_events_msg');
+    register_setting('wplc', 'wplc_manage_items_per_page');
+    register_setting('wplc', 'wplc_open_links_in_new_window');
+    register_setting('wplc', 'wplc_nofollow_links'); 
+}
+
 function wplc_show_admin_options_page() {
 	wplc_setup();
 	global $wplc_domain;
@@ -876,7 +897,7 @@ function wplc_show_admin_options_page() {
 	
 	<div class="wrap">
 		<form method="post" action="options.php">
-			<?php wp_nonce_field('update-options'); ?>
+			<?php settings_fields('wplc'); ?>
 			<h2><?php _e("WPListCal Options", $wplc_domain); ?></h2>
 			<table class="form-table">
 				<tr valign="top" id="displaymode">
@@ -887,8 +908,8 @@ function wplc_show_admin_options_page() {
 						<br />
 						<fieldset style="margin-left: 25px;border:none;">
 							<legend style="float:left; margin-top:2px;"><?php _e("Event Format", $wplc_domain); ?> <a href="javascript:;" title="<?php _e("The following variables are available:", $wplc_domain); ?> %NAME%, %LINK%, %LINKEDNAME%, %LOCATION%, %DESCRIPTION%, %START%, %END%, and %AUTHOR%.
-								
-Put words into curly brackets to make them dependent on the first variable in the bracketed statement. Use '^' to escape brackets or to stop a variable from being the dependent variable for a statement." style="cursor:help;">?</a>:</legend>
+									
+<?php _e("Put words into curly brackets to make them dependent on the first variable in the bracketed statement. Use '^' to escape brackets or to stop a variable from being the dependent variable for a statement.", $wplc_domain); ?>" style="cursor:help;">?</a>:</legend>
 							<div>
 								<textarea name="wplc_event_format" id="wplc_event_format" style="width:350px; height:50px;" class="large-text code"<?php echo get_option('wplc_display_mode') == 'list' ? "" : "disabled='disabled'"; ?>><?php echo htmlentities(get_option('wplc_event_format')); ?></textarea>
 							</div>
@@ -903,7 +924,7 @@ Put words into curly brackets to make them dependent on the first variable in th
 						<input type="text" name="wplc_date_format" value="<?php echo get_option('wplc_date_format'); ?>" class="regular-text" />
 						<span class="setting-description"><a href="http://codex.wordpress.org/Formatting_Date_and_Time"><?php _e("Documentation on date formatting", $wplc_domain); ?></a>. <?php _e("Click &quot;Save Changes&quot; to update sample output.", $wplc_domain); ?></span>
 						<br />
-						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date_format'), wplc_time()); ?>
+						<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date_i18n(get_option('wplc_date_format'), wplc_time()); ?>
 					</td>
 				</tr>
 				<tr valign="top" id="24hr_time">
@@ -928,7 +949,7 @@ Put words into curly brackets to make them dependent on the first variable in th
 							<legend style="float:left; margin-top:2px;"><?php _e("End Date Format", $wplc_domain); ?>:</legend>
 							<div>
 								<input type="text" name="wplc_date2_time_format" id="wplc_date2_time_format" value="<?php echo get_option('wplc_date2_time_format'); ?>"<?php echo $hide_same_date ? "" : "disabled='disabled'"; ?> class="small-text" />
-								<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date(get_option('wplc_date2_time_format'), wplc_time()); ?>
+								<strong><?php _e("Output:", $wplc_domain); ?></strong> <?php echo date_i18n(get_option('wplc_date2_time_format'), wplc_time()); ?>
 							</div>
 						</fieldset>
 						<input type="radio" name="wplc_hide_same_date" value="false" id="wplc_hide_same_date_false" onclick="wplc_changeDisabled('wplc_date2_time_format', true);"<?php echo $hide_same_date ? "" : "checked='checked'"; ?> />
@@ -1001,8 +1022,6 @@ Put words into curly brackets to make them dependent on the first variable in th
 					</td>
 				</tr>
 			</table>
-			<input type="hidden" name="action" value="update" />
-			<input type="hidden" name="page_options" value="wplc_display_mode,wplc_event_format,wplc_date_format,wplc_use_24hr_time,wplc_hide_same_date,wplc_date2_time_format,wplc_max_events,wplc_advance_days,wplc_show_past_events,wplc_no_events_msg,wplc_manage_items_per_page,wplc_open_links_in_new_window,wplc_nofollow_links" />
 			<p class="submit"><input type="submit" name="Submit" value="<?php _e("Save Changes", $wplc_domain); ?>" class="button-primary" /></p>
 		</form>
 	</div>

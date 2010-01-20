@@ -3,8 +3,8 @@ Contributors: jonkern
 Donate link: http://www.jonathankern.com/code/wplistcal
 Tags: calendar, events
 Requires at least: 2.7
-Tested up to: 2.9
-Stable tag: 1.3.4
+Tested up to: 3.0-alpha
+Stable tag: 1.3.5
 Text Domain: wplistcal
 
 WPListCal allows you to list upcoming events on your blog in a list or table format.
@@ -15,7 +15,7 @@ WPListCal allows you to list upcoming events on your blog in a list or table for
 
 = Version Guide =
 
-* WordPress 2.7 or later &rarr; Use WPListCal 1.3.4 (current stable release)
+* WordPress 2.7 or later &rarr; Use WPListCal 1.3.5 (current stable release)
 * WordPress 2.5-2.6.3 &rarr; Use WPListCal 1.0.8.2
 * WordPress 2.0.3-2.3.3 &rarr; Use WPListCal 1.0.2
 
@@ -115,14 +115,6 @@ As of 1.0.6, deactivating the plugin has no effect on your data. When upgrading 
 
 WPListCal is specialized to provide clean list or table based output for you to style or reparse any way you'd like.  Other calendar plugins force you to use a gregorian calendar view which may be inappropriate for many applications.
 
-= Does WPListCal work on WordPress 2.8? =
-
-WPListCal 1.2.2 and later work on WordPress 2.8
-
-= When I click settings in the plugins page, I get the error "Cannot load wplc-options." =
-
-WPListCal 1.2 solves this issue
-
 = Why do some of my events show N/A for author and create date? =
 
 Events created before upgrading to version 1.1 did not have those values set, therefore WPListCal marks them as N/A.
@@ -144,6 +136,11 @@ Go to WordPress General settings and reset your timezone to a city rather than a
 Great, I'm glad to hear feature requests.  Just post a comment on the [plugin's homepage](http://www.jonathankern.com/code/wplistcal "WPListCal Homepage").
 
 == Changelog ==
+
+= 1.3.5 =
+
+* FIXED: WordPressMU support on options page (thanks Gabriel Mazetto for the patch)
+* FIXED: Multiple i18n bugs, now using date_i18n to allow localized dates (thanks Jonas for the patch)
 
 = 1.3.4 =
 

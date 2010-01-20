@@ -3,7 +3,7 @@
 Plugin Name: WPListCal
 Plugin URI: http://www.jonathankern.com/code/wplistcal
 Description: WPListCal will display a simple listing of events anywhere on your Wordpress site.
-Version: 1.3.4
+Version: 1.3.5
 Author: Jonathan Kern
 Author URI: http://www.jonathankern.com
 
@@ -61,10 +61,10 @@ if(!$wplc_is_included) {
 	
 	// Localization setup
 	function wplc_setup() {
-		global $wplc_domain, $wplc_is_setup;
+		global $wplc_domain, $wplc_is_setup, $wplc_plugin;
 		if($wplc_is_setup)
 			return;
-		load_plugin_textdomain($wplc_domain, $wplc_dir);
+		load_plugin_textdomain($wplc_domain, false, dirname($wplc_plugin));
 		$wplc_is_setup = true;
 	}
 
@@ -386,15 +386,15 @@ if(!$wplc_is_included) {
 			$ret = "<table class='wplc_table'><tbody>";
 		for($i=0, $len=count($events); $i<$len; $i++) {
 			// Prepare event string
-			$start = date($date_format, $events[$i]['event_start_time']);
-			$end = date($date_format, $events[$i]['event_end_time']);
+			$start = date_i18n($date_format, $events[$i]['event_start_time']);
+			$end = date_i18n($date_format, $events[$i]['event_end_time']);
 			// Check for same date
-			if($hide_same_date) {
+			if(strcasecmp($hide_same_date, 'true') == 0) {
 				$start_date = date("Ymd", $events[$i]['event_start_time']);
 				$end_date = date("Ymd", $events[$i]['event_end_time']);
 				
-				if($start_date == $end_date) {
-					$end = date($date2_time_format, $events[$i]['event_end_time']);
+				if($start_date == $end_date) {		
+					$end = date_i18n($date2_time_format, $events[$i]['event_end_time']);
 				}
 			}
 			$cleaned_name = str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_name']))));
