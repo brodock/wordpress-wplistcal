@@ -1,0 +1,552 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Jonathan Kern
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/wplistcal\n"
+"POT-Creation-Date: 2009-05-13 04:14+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: admin.inc.php:98 admin.inc.php:104 admin.inc.php:111 wplistcal.php:391
+msgid "N/A"
+msgstr ""
+
+#: admin.inc.php:129
+msgid "Edit Event"
+msgstr ""
+
+#: admin.inc.php:129 admin.inc.php:455
+msgid "Add New Event"
+msgstr ""
+
+#: admin.inc.php:137
+msgid "Publish"
+msgstr ""
+
+#: admin.inc.php:144
+msgid "Author:"
+msgstr ""
+
+#: admin.inc.php:148
+msgid "Published on:"
+msgstr ""
+
+#: admin.inc.php:153
+msgid "Modified on:"
+msgstr ""
+
+#: admin.inc.php:162
+msgid "You are about to delete this event \\'"
+msgstr ""
+
+#: admin.inc.php:162
+msgid "Delete Event"
+msgstr ""
+
+#: admin.inc.php:164 admin.inc.php:459 admin.inc.php:639
+msgid "Export"
+msgstr ""
+
+#: admin.inc.php:176
+msgid "Save and new"
+msgstr ""
+
+#: admin.inc.php:179
+msgid "Save"
+msgstr ""
+
+#: admin.inc.php:198
+msgid "Title"
+msgstr ""
+
+#: admin.inc.php:206 admin.inc.php:621 admin.inc.php:655
+msgid "Location"
+msgstr ""
+
+#: admin.inc.php:214
+msgid "Link"
+msgstr ""
+
+#: admin.inc.php:222
+msgid "Date/Time"
+msgstr ""
+
+#: admin.inc.php:231 admin.inc.php:271
+msgid "Jan"
+msgstr ""
+
+#: admin.inc.php:232 admin.inc.php:272
+msgid "Feb"
+msgstr ""
+
+#: admin.inc.php:233 admin.inc.php:273
+msgid "Mar"
+msgstr ""
+
+#: admin.inc.php:234 admin.inc.php:274
+msgid "Apr"
+msgstr ""
+
+#: admin.inc.php:235 admin.inc.php:275
+msgid "May"
+msgstr ""
+
+#: admin.inc.php:236 admin.inc.php:276
+msgid "Jun"
+msgstr ""
+
+#: admin.inc.php:237 admin.inc.php:277
+msgid "Jul"
+msgstr ""
+
+#: admin.inc.php:238 admin.inc.php:278
+msgid "Aug"
+msgstr ""
+
+#: admin.inc.php:239 admin.inc.php:279
+msgid "Sep"
+msgstr ""
+
+#: admin.inc.php:240 admin.inc.php:280
+msgid "Oct"
+msgstr ""
+
+#: admin.inc.php:241 admin.inc.php:281
+msgid "Nov"
+msgstr ""
+
+#: admin.inc.php:242 admin.inc.php:282
+msgid "Dec"
+msgstr ""
+
+#: admin.inc.php:421
+msgid "Event Added"
+msgstr ""
+
+#: admin.inc.php:421
+msgid "Event Updated"
+msgstr ""
+
+#: admin.inc.php:453
+msgid "Events"
+msgstr ""
+
+#: admin.inc.php:455
+msgid "Add New"
+msgstr ""
+
+#: admin.inc.php:456 admin.inc.php:592
+msgid "Edit Events"
+msgstr ""
+
+#: admin.inc.php:456 admin.inc.php:639
+msgid "Edit"
+msgstr ""
+
+#: admin.inc.php:459 admin.inc.php:793
+msgid "Export Events"
+msgstr ""
+
+#: admin.inc.php:460 admin.inc.php:834
+msgid "Cleanup Events"
+msgstr ""
+
+#: admin.inc.php:460
+msgid "Cleanup"
+msgstr ""
+
+#: admin.inc.php:461
+msgid "WPListCal Settings"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (PACKAGE VERSION)  #-#-#-#-#
+#. Plugin Name of an extension
+#: admin.inc.php:461
+msgid "WPListCal"
+msgstr ""
+
+#: admin.inc.php:469
+msgid "New Event"
+msgstr ""
+
+#: admin.inc.php:483
+msgid "Event"
+msgid_plural "Events"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin.inc.php:537
+msgid "Event deleted"
+msgstr ""
+
+#: admin.inc.php:578
+#, php-format
+msgid ""
+"You are about to delete the event \\'%s\\'. \\n\\'OK\\' to delete, \\'Cancel"
+"\\' to stop."
+msgstr ""
+
+#: admin.inc.php:599 admin.inc.php:667
+msgid "&laquo; Previous Events"
+msgstr ""
+
+#: admin.inc.php:607 admin.inc.php:675
+msgid "Next Events &raquo;"
+msgstr ""
+
+#: admin.inc.php:613 admin.inc.php:681
+msgid "Add New Event &raquo;"
+msgstr ""
+
+#: admin.inc.php:619 admin.inc.php:653
+msgid "ID"
+msgstr ""
+
+#: admin.inc.php:620 admin.inc.php:654
+msgid "Event Name"
+msgstr ""
+
+#: admin.inc.php:622 admin.inc.php:656
+msgid "Start Date/Time"
+msgstr ""
+
+#: admin.inc.php:623 admin.inc.php:657
+msgid "End Date/Time"
+msgstr ""
+
+#: admin.inc.php:639
+msgid "Delete"
+msgstr ""
+
+#: admin.inc.php:734
+msgid "Events successfully imported"
+msgstr ""
+
+#: admin.inc.php:739
+msgid "Error: iCalendar file was not parsable"
+msgstr ""
+
+#: admin.inc.php:745
+msgid "Error: Upload failed"
+msgstr ""
+
+#: admin.inc.php:751
+msgid ""
+"Error: Invalid file type uploaded. Please upload an iCalendar file. Type: "
+msgstr ""
+
+#: admin.inc.php:768
+msgid "Import Events"
+msgstr ""
+
+#: admin.inc.php:770
+msgid ""
+"WPListCal can import events from iCalendar files saved from programs like "
+"Apple iCal, Microsoft Outlook, and Mozilla Sunbird. Choose an iCalendar (."
+"ics) file using the selector below and press &quot;Import&quot; to add all "
+"the events in the file to your WPListCal calendar."
+msgstr ""
+
+#: admin.inc.php:773
+msgid ""
+"Events will maintain the creation timestamp from the file, but the author "
+"will be listed as the account you are currently logged in as. The modified "
+"time will be changed to the current time."
+msgstr ""
+
+#: admin.inc.php:777
+msgid "iCalendar File:"
+msgstr ""
+
+#: admin.inc.php:781
+msgid "Import"
+msgstr ""
+
+#: admin.inc.php:795
+#, php-format
+msgid ""
+"WPListCal can save your events in the standard iCalendar format. Events are "
+"stored in the timezone that your blog is set to use. All events are exported "
+"at once, past and future. If you'd like to export a single event, go to the %"
+"smanage events%s page and click &quot;Export&quot; near the event you want "
+"to export."
+msgstr ""
+
+#: admin.inc.php:797
+msgid "Export events &raquo;"
+msgstr ""
+
+#: admin.inc.php:813
+#, php-format
+msgid "%d old "
+msgstr ""
+
+#: admin.inc.php:817
+msgid "No old events to delete."
+msgstr ""
+
+#: admin.inc.php:821
+msgid "Error: Event cleanup failed."
+msgstr ""
+
+#: admin.inc.php:836
+msgid ""
+"Have a bunch of old events sitting around? Click below to delete all events "
+"that have ended already. Note that this operation CANNOT be undone."
+msgstr ""
+
+#: admin.inc.php:838
+msgid "Are you sure you want to delete all past events?"
+msgstr ""
+
+#: admin.inc.php:838
+msgid "Cleanup events &raquo;"
+msgstr ""
+
+#: admin.inc.php:882
+msgid "WPListCal Options"
+msgstr ""
+
+#: admin.inc.php:885
+msgid "Display Mode:"
+msgstr ""
+
+#: admin.inc.php:888
+msgid "Show events in an unordered list <em>(Default)</em>"
+msgstr ""
+
+#: admin.inc.php:891
+msgid "Event Format"
+msgstr ""
+
+#: admin.inc.php:891
+msgid "The following variables are available:"
+msgstr ""
+
+#: admin.inc.php:899
+msgid "Show events in a table"
+msgstr ""
+
+#: admin.inc.php:903
+msgid "Date/Time Format:"
+msgstr ""
+
+#: admin.inc.php:906
+msgid "Documentation on date formatting"
+msgstr ""
+
+#: admin.inc.php:906
+msgid "Click &quot;Save Changes&quot; to update sample output."
+msgstr ""
+
+#: admin.inc.php:908 admin.inc.php:933
+msgid "Output:"
+msgstr ""
+
+#: admin.inc.php:912
+msgid "12/24 Hour Time:"
+msgstr ""
+
+#: admin.inc.php:915
+msgid "Use 12 hour time (e.g. 1:35pm)"
+msgstr ""
+
+#: admin.inc.php:918
+msgid "Use 24 hour time (e.g. 13:35)"
+msgstr ""
+
+#: admin.inc.php:920
+msgid ""
+"What time-style to use in the admin area (does not affect what is displayed "
+"on your site)"
+msgstr ""
+
+#: admin.inc.php:924
+msgid "End Date Options:"
+msgstr ""
+
+#: admin.inc.php:927
+msgid ""
+"If event starts and ends on the same day, use the time format below for the "
+"end date <em>(Default)</em>"
+msgstr ""
+
+#: admin.inc.php:930
+msgid "End Date Format"
+msgstr ""
+
+#: admin.inc.php:937
+msgid "Use the same format for both start and end dates"
+msgstr ""
+
+#: admin.inc.php:941
+msgid "Maximum Displayed Events:"
+msgstr ""
+
+#: admin.inc.php:944
+msgid "How many events to display in the event list, -1 for no limit"
+msgstr ""
+
+#: admin.inc.php:948
+msgid "Maximum Advanced Notice:"
+msgstr ""
+
+#: admin.inc.php:951
+msgid "How many days in advance to display events, -1 for no limit"
+msgstr ""
+
+#: admin.inc.php:955
+msgid "Past Events:"
+msgstr ""
+
+#: admin.inc.php:958
+msgid "Only show current and future events"
+msgstr ""
+
+#: admin.inc.php:961
+msgid "Show all events, even if they have already occurred"
+msgstr ""
+
+#: admin.inc.php:965
+msgid "Event Order:"
+msgstr ""
+
+#: admin.inc.php:968
+msgid "Show the closest event first"
+msgstr ""
+
+#: admin.inc.php:971
+msgid "Show the furthest event first"
+msgstr ""
+
+#: admin.inc.php:975
+msgid "No Events Message:"
+msgstr ""
+
+#: admin.inc.php:978
+msgid "Message to show if there are no events, leave blank for none"
+msgstr ""
+
+#: admin.inc.php:982
+msgid "Admin Items Per Page:"
+msgstr ""
+
+#: admin.inc.php:985
+msgid "How many events to display per page on the Manage Events admin page"
+msgstr ""
+
+#: admin.inc.php:989
+msgid "Event Link Target:"
+msgstr ""
+
+#: admin.inc.php:992
+msgid "Open links in the current window"
+msgstr ""
+
+#: admin.inc.php:995
+msgid "Open links in a new window"
+msgstr ""
+
+#: admin.inc.php:999
+msgid "Link No Follow:"
+msgstr ""
+
+#: admin.inc.php:1002
+msgid "Set rel=&quot;nofollow&quot; on links"
+msgstr ""
+
+#: admin.inc.php:1008
+msgid "Save Changes"
+msgstr ""
+
+#: admin.inc.php:1048
+msgid "Widget Title:"
+msgstr ""
+
+#: wplistcal.php:102
+msgid "Add events to WPListCal"
+msgstr ""
+
+#: wplistcal.php:103
+msgid ""
+"Congratulations, you've just installed WPListCal! Now you just need to add "
+"your events into the system via the event tab in the Write area of the admin "
+"panel."
+msgstr ""
+
+#: wplistcal.php:138
+msgid "Upcoming Events"
+msgstr ""
+
+#: wplistcal.php:279 wplistcal.php:291
+#, php-format
+msgid "Cannot parse event format: unexpected escape character [ch %d]"
+msgstr ""
+
+#: wplistcal.php:296
+#, php-format
+msgid ""
+"Cannot parse event format: unexpected beginning bracket (no nested tokens "
+"allowed) [ch %d]"
+msgstr ""
+
+#: wplistcal.php:307
+#, php-format
+msgid ""
+"Cannot parse event format: unexpected beginning bracket (no nested hidden "
+"variables allowed) [ch %d]"
+msgstr ""
+
+#: wplistcal.php:321 wplistcal.php:341
+#, php-format
+msgid "Cannot parse event format: unexpected end bracket [ch %d]"
+msgstr ""
+
+#: wplistcal.php:324
+#, php-format
+msgid "Cannot parse event format: unexpected end of bracketed token [ch %d]"
+msgstr ""
+
+#: wplistcal.php:327
+#, php-format
+msgid "Cannot parse event format: missing dependent variable [ch %d]"
+msgstr ""
+
+#: wplistcal.php:330
+#, php-format
+msgid "Cannot parse event format: invalid dependent variable %s [ch %d]"
+msgstr ""
+
+#: wplistcal.php:344
+#, php-format
+msgid ""
+"Cannot parse event format: unexpected end of hidden variable token [ch %d]"
+msgstr ""
+
+#. Plugin URI of an extension
+msgid "http://www.jonathankern.com/code/wplistcal"
+msgstr ""
+
+#. Description of an extension
+msgid ""
+"WPListCal will display a simple listing of events anywhere on your Wordpress "
+"site."
+msgstr ""
+
+#. Author of an extension
+msgid "Jonathan Kern"
+msgstr ""
+
+#. Author URI of an extension
+msgid "http://www.jonathankern.com"
+msgstr ""
