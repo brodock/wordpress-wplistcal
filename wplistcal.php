@@ -37,7 +37,7 @@ $wplc_plugin = plugin_basename(__FILE__);
 $wplc_dir = "../wp-content/plugins".dirname("/".$wplc_plugin);
 
 // If not running PHP5, define str_ireplace()
-if(!function_exists("str_ireplace")) {
+if (!function_exists("str_ireplace")) {
 	function str_ireplace($search, $replace, $subject) {
 	   $i = 0;
 	   while($pos = strpos(strtolower($subject), $search, $i)) {
@@ -48,21 +48,21 @@ if(!function_exists("str_ireplace")) {
 	}
 }
 
-if(!function_exists("htmlspecialchars_decode")) {
+if (!function_exists("htmlspecialchars_decode")) {
 	function htmlspecialchars_decode($string,$style=ENT_COMPAT) {
 		$translation = array_flip(get_html_translation_table(HTML_SPECIALCHARS,$style));
-		if($style === ENT_QUOTES){ $translation['&#039;'] = '\''; }
+		if ($style === ENT_QUOTES){ $translation['&#039;'] = '\''; }
 		return strtr($string,$translation);
 	}
 }
 
-if(!$wplc_is_included) {
+if (!isset($wplc_is_included)) {
 	$wplc_is_included = true;
 	
 	// Localization setup
 	function wplc_setup() {
 		global $wplc_domain, $wplc_is_setup, $wplc_plugin;
-		if($wplc_is_setup)
+		if ($wplc_is_setup)
 			return;
 		load_plugin_textdomain($wplc_domain, false, dirname($wplc_plugin));
 		$wplc_is_setup = true;
@@ -74,12 +74,12 @@ if(!$wplc_is_included) {
 		global $wpdb, $wplc_domain, $current_user;
 		get_currentuserinfo();
 		
-		$siteurl = get_bloginfo("siteurl");
+		$siteurl = get_bloginfo('url');
 	
 		$tbl_name = $wpdb->prefix."wplistcal";
 	
 		// Check if DB exists and add it if necessary
-		if($wpdb->get_var("SHOW TABLES LIKE '$tbl_name'") != $tbl_name) {
+		if ($wpdb->get_var("SHOW TABLES LIKE '$tbl_name'") != $tbl_name) {
 			$sql = "CREATE TABLE ".$tbl_name."(
 				id mediumint(9) NOT NULL AUTO_INCREMENT,
 				event_name text NOT NULL,
@@ -148,7 +148,7 @@ if(!$wplc_is_included) {
 	function wplc_upgrade_if_needed() {
 		global $wpdb;
 		$installed_ver = get_option("wplc_db_version");
-		if($installed_ver != WPLC_DB_VERSION) {
+		if ($installed_ver != WPLC_DB_VERSION) {
 			$tbl_name = $wpdb->prefix."wplistcal";
 			require_once(ABSPATH."wp-admin/includes/upgrade.php");
 			
@@ -173,7 +173,7 @@ if(!$wplc_is_included) {
 	}
 	
 	function wplc_init_upload_dir_settings() {
-		$siteurl = get_option('siteurl');
+		$siteurl = get_bloginfo('url');
 		$upload_path = get_option('upload_path');
 		if (trim($upload_path) === '')
 			$upload_path = 'wp-content/uploads';
@@ -182,7 +182,7 @@ if(!$wplc_is_included) {
 		$path = str_replace(ABSPATH, '', trim($upload_path));
 		if (!$url = get_option('upload_url_path'))
 			$url = trailingslashit($siteurl).$path;
-		if(defined('UPLOADS')) {
+		if (defined('UPLOADS')) {
 			$dir = ABSPATH . UPLOADS;
 			$url = trailingslashit($siteurl).UPLOADS;
 		}
@@ -197,40 +197,37 @@ if(!$wplc_is_included) {
 	}
 	
 	function wplc_request_handler() {
-		$op = $_GET['op'];
-		
+		$op = filter_input(INPUT_GET, 'op', FILTER_SANITIZE_STRING);
 		switch($op) {
-			case "wplcexport":
+			case 'wplcexport':
 				wplc_handle_export();
 				break;
 		}
 	}
-	add_action("init", "wplc_request_handler");
+	add_action('init', 'wplc_request_handler');
 
-	// Show the event list
-	//----------------------------------------------------------------------------------------------
-	// Parameters (all optional - defaults are defined on the options page):
-	// display_mode (string): Either "list" or "table"
-	// event_format (string): The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%,
-	//    %LOCATION%, %DESCRIPTION%, %START%, %END%, %AUTHOR%, and %EXPORTURL% to include event data. You
-	//	  can also make statements dependent on a variable by wrapping them in curly brackets
-	//	  (ex. {Date: %START%}). The first variable in the brackets decides whether the statement prints 
-	//	  or not. Wrap a variable insquare brackets (ex. [%DESCRIPTION%] to make it dependent but hidden. 
-	//	  Use '^' to escape bothtypes of brackets and variables (ex. {Foo ^%VAR^% ^[^%NOTDEPENDENT^%^] [%DEPENDENT%]}).
-	// date_format (string): The format for dates/times. Use the PHP date() format just like
-	//	  Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
-	// max_events (int):  the maximum number of events to display, defaults to -1 (show all)
-	// show_past_events (bool): whether to show past events, defaults to false
-	// advance_days (int): the amount of days in advance to display events, -1 for no limit
-	// event_order (string): Either "asc" or "desc". "asc" shows the closest event first, 
-	//    "desc" shows the furthest event first
- 	// hide_same_date (bool): whether to hide the second date if it is on the same day, defaults to true
-	// date2_time_format (string): if hide_same_date is true, then format the second timestamp with this
-	// no_events_msg (string): The message to show if there are no events to display, empty string for none
+    /**
+     * Show the event list
+     * Parameters (all optional - defaults are defined on the options page)
+     * 
+     * @global string $wplc_domain
+     * @global <type> $wpdb
+     * @param string $display_mode Either "list" or "table"
+     * @param string $event_format The format of the event string. You can use %NAME%, %LINK%, %LINKEDNAME%, %LOCATION%, %DESCRIPTION%, %START%, %END%, %AUTHOR%, and %EXPORTURL% to include event data. You can also make statements dependent on a variable by wrapping them in curly brackets (ex. {Date: %START%}). The first variable in the brackets decides whether the statement prints or not. Wrap a variable insquare brackets (ex. [%DESCRIPTION%] to make it dependent but hidden. Use '^' to escape bothtypes of brackets and variables (ex. {Foo ^%VAR^% ^[^%NOTDEPENDENT^%^] [%DEPENDENT%]}).
+     * @param string $date_format The format for dates/times. Use the PHP date() format just like Wordpress options. Instructions available at http://us.php.net/manual/en/function.date.php
+     * @param int $max_events The maximum number of events to display, defaults to -1 (show all)
+     * @param bool $show_past_events Whether to show past events, defaults to false
+     * @param int $advance_days The amount of days in advance to display events, -1 for no limit
+     * @param string $event_order Either "asc" or "desc". "asc" shows the closest event first, "desc" shows the furthest event first
+     * @param bool $hide_same_date Whether to hide the second date if it is on the same day, defaults to true
+     * @param string $date2_time_format If hide_same_date is true, then format the second timestamp with this
+     * @param string $no_events_msg The message to show if there are no events to display, empty string for none
+     * @return string
+     */
 	function wplc_show_events($display_mode=null, $event_format=null, $date_format=null, $max_events=null, $show_past_events=null, $advance_days=null, $event_order=null, $hide_same_date=null, $date2_time_format=null, $no_events_msg=null) {
 		wplc_setup();
 		global $wplc_domain, $wpdb;
-	
+
 		// Setup default parameter values
 		wplc_set_if_null($display_mode, "wplc_display_mode");
 		wplc_set_if_null($event_format, "wplc_event_format");
@@ -244,23 +241,23 @@ if(!$wplc_is_included) {
 		wplc_set_if_null($event_order, "wplc_event_order");
 	
 		$max_events = intval($max_events);
-		if($max_events == 0) {
+		if ($max_events == 0) {
 			$max_events = -1;
 		}
 		$advance_days = intval($advance_days);
-		if($advance_days == 0) {
+		if ($advance_days == 0) {
 			$advance_days = -1;
 		}
-		if(!is_bool($show_past_events)) {
+		if (!is_bool($show_past_events)) {
 			$show_past_events = $show_past_events == "true";
 		}
 
 		$tbl_name = get_option("wplc_tbl_name");
-		$siteurl = get_option("siteurl");
+		$siteurl = get_bloginfo('url');
 	
 		$events = wplc_get_events($display_mode, $event_format, $max_events, $advance_days, $show_past_events, $event_order);
 		
-		if(!empty($no_events_msg) && count($events) == 0) {
+		if (!empty($no_events_msg) && count($events) == 0) {
 			return $no_events_msg;
 		}
 		
@@ -286,12 +283,11 @@ if(!$wplc_is_included) {
 		$tokens = array();
 		
 		// Scan the event format for bracketed variables
-		for($i=0, $len = strlen($input); $i<$len; $i++)
-		{
+		for ($i=0, $len = strlen($input); $i<$len; $i++) {
 			$ch = $input[$i];
 			
-			if($ch == "^") {
-				if($i == $len-1) {
+			if ($ch == "^") {
+				if ($i == $len-1) {
 					die(sprintf(__("Cannot parse event format: unexpected escape character [ch %d]", $wplc_domain), $i));
 				}
 				switch($input[$i+1]) {
@@ -306,43 +302,39 @@ if(!$wplc_is_included) {
 					default:
 						die(sprintf(__("Cannot parse event format: unexpected escape character [ch %d]", $wplc_domain), $i));
 				}
-			}
-			elseif($ch == "{") {
-				if($indented) {
+			} elseif ($ch == "{") {
+				if ($indented) {
 					die(sprintf(__("Cannot parse event format: unexpected beginning bracket (no nested tokens allowed) [ch %d]", $wplc_domain), $i));
 				}
 				
-				if(!empty($token)) {
+				if (!empty($token)) {
 					$tokens[] = new FormatToken($token);
 					$token = "";
 				}
 				$indented = true;
-			}
-			elseif($ch == "[") {
-				if($reading_hidden_variable) {
+			} elseif ($ch == "[") {
+				if ($reading_hidden_variable) {
 					die(sprintf(__("Cannot parse event format: unexpected beginning bracket (no nested hidden variables allowed) [ch %d]", $wplc_domain), $i));
 				}
 				
 				$reading_hidden_variable = true;
-			}
-			elseif($ch == "%" && !$reading_variable && $indented && empty($dependent)) {
+			} elseif ($ch == "%" && !$reading_variable && $indented && empty($dependent)) {
 				$reading_variable = true;
 				$dependent .= $ch;
 				
-				if(!$reading_hidden_variable)
+				if (!$reading_hidden_variable)
 					$token .= $ch;
-			}
-			elseif($ch == "}") {
-				if(!$indented) {
+			} elseif ($ch == "}") {
+				if (!$indented) {
 					die(sprintf(__("Cannot parse event format: unexpected end bracket [ch %d]", $wplc_domain), $i));
 				}
-				if($reading_variable || $reading_hidden_variable) {
+				if ($reading_variable || $reading_hidden_variable) {
 					die(sprintf(__("Cannot parse event format: unexpected end of bracketed token [ch %d]", $wplc_domain), $i));
 				}
-				if(empty($dependent)) {
+				if (empty($dependent)) {
 					die(sprintf(__("Cannot parse event format: missing dependent variable [ch %d]", $wplc_domain), $i));
 				}
-				if(!$variable_check[$dependent]) {
+				if (!$variable_check[$dependent]) {
 					die(sprintf(__("Cannot parse event format: invalid dependent variable %s [ch %d]", $wplc_domain), $dependent, $i));
 				}
 				
@@ -351,49 +343,47 @@ if(!$wplc_is_included) {
 				$token = "";
 				$dependent = "";
 				$indented = false;
-			}
-			elseif($ch == "]") {
-				if(!$reading_hidden_variable) {
+			} elseif ($ch == "]") {
+				if (!$reading_hidden_variable) {
 					die(sprintf(__("Cannot parse event format: unexpected end bracket [ch %d]", $wplc_domain), $i));
 				}
-				if($reading_variable) {
+				if ($reading_variable) {
 					die(sprintf(__("Cannot parse event format: unexpected end of hidden variable token [ch %d]", $wplc_domain), $i));
 				}
 				
 				$reading_hidden_variable = false;
-			}
-			else {
-				if(!$reading_hidden_variable) {
+			} else {
+				if (!$reading_hidden_variable) {
 					$token .= $ch;
 				}
-				if($reading_variable) {
+				if ($reading_variable) {
 					$dependent .= $ch;
-					if($ch == "%") {
+					if ($ch == "%") {
 						$reading_variable = false;
 					}
 				}
 			}
 		}
 		
-		if(!empty($token)) {
+		if (!empty($token)) {
 			$tokens[] = new FormatToken($token);
 		}
 	
 		// Print events
-		if($display_mode == "list")
+		if ($display_mode == "list")
 			$ret = "<ul class='wplc_event_list'>\n";
-		elseif($display_mode == "table")
+		elseif ($display_mode == "table")
 			$ret = "<table class='wplc_table'><tbody>";
-		for($i=0, $len=count($events); $i<$len; $i++) {
+		for ($i=0, $len=count($events); $i<$len; $i++) {
 			// Prepare event string
 			$start = date_i18n($date_format, $events[$i]['event_start_time']);
 			$end = date_i18n($date_format, $events[$i]['event_end_time']);
 			// Check for same date
-			if(strcasecmp($hide_same_date, 'true') == 0) {
+			if (strcasecmp($hide_same_date, 'true') == 0) {
 				$start_date = date("Ymd", $events[$i]['event_start_time']);
 				$end_date = date("Ymd", $events[$i]['event_end_time']);
 				
-				if($start_date == $end_date) {		
+				if ($start_date == $end_date) {
 					$end = date_i18n($date2_time_format, $events[$i]['event_end_time']);
 				}
 			}
@@ -404,10 +394,10 @@ if(!$wplc_is_included) {
 			$target = get_option("wplc_open_links_in_new_window") == "true" ? " target='_blank'" : "";
 			$nofollow = get_option("wplc_nofollow_links") == "true" ? " rel='nofollow'" : "";
 			$linked_name = empty($cleaned_link) ? $cleaned_name : "<a href='".$cleaned_link."'".$target.$nofollow.">".$cleaned_name."</a>";
-			$cleaned_author = is_null($events[$i]['event_author']) ? __("N/A", $wplc_domain) : str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_author']))));
+			$cleaned_author = empty($events[$i]['event_author']) ? __("N/A", $wplc_domain) : str_replace(" & ", " &amp; ", str_replace('"', "&quot;", stripslashes(stripslashes($events[$i]['event_author']))));
 			$export_url = $siteurl."?op=wplcexport&id=".$events[$i]['id'];
 		
-			if($display_mode == "list") {
+			if ($display_mode == "list") {
 				$variable_check_map = array(
 					"%NAME%" => $cleaned_name,
 					"%LINK%" => $cleaned_link,
@@ -422,9 +412,9 @@ if(!$wplc_is_included) {
 				);
 				
 				$output = "";
-				for($j=0, $len2=count($tokens); $j<$len2; $j++) {
+				for ($j=0, $len2=count($tokens); $j<$len2; $j++) {
 					$token = $tokens[$j];
-					if(null === $token->dependent ||
+					if (null === $token->dependent ||
 					  !empty($variable_check_map[$token->dependent])) {
 						$output .= $token->string;
 					}
@@ -441,8 +431,7 @@ if(!$wplc_is_included) {
 				$evt = str_replace("%AUTHOR%", $cleaned_author, $evt);
 				$evt = str_replace("%EXPORTURL%", $export_url, $evt);
 				$ret .= "<li".(($i % 2 == 1) ? " class='wplc_alt'" : "").">".$evt."</li>";
-			}
-			elseif($display_mode == "table") {
+			} elseif ($display_mode == "table") {
 				$ret .= "<tr".(($i % 2 == 1) ? " class='wplc_alt'" : "").">\n\t"
 							."<td class='wplc_event_name'>".$linked_name."</td>\n\t"
 							."<td class='wplc_event_location'>".$events[$i]['event_loc']."</td>\n\t"
@@ -453,10 +442,10 @@ if(!$wplc_is_included) {
 							."<td class='wplc_event_desc' colspan='4'>".$cleaned_desc."</td>\n"
 						."</tr>";
 			}
-		}
-		if($display_mode == "list")
+		} 
+        if ($display_mode == "list")
 			$ret .= "</ul>";
-		elseif($display_mode == "table")
+		elseif ($display_mode == "table")
 			$ret .= "</tbody></table>";
 		return $ret;
 	}
@@ -465,7 +454,7 @@ if(!$wplc_is_included) {
 	// Deprecated -- use the shortcode instead ([wplistcal] does the same thing as <!--wplistcal-->)
 	add_filter("the_content", "wplc_content_filter");
 	function wplc_content_filter($content) {
-		return str_ireplace("<!--wplistcal-->", wplc_show_events(), $content);
+		return (strpos('<!--wplistcal-->', $content) !== false) ? str_ireplace('<!--wplistcal-->', wplc_show_events(), $content) : $content;
 	}
 	
 	// [wplistcal display_mode="list", event_format="%NAME%", date_format="M j, Y g:ia", max_events="-1", show_past_events="false", advance_days="-1", event_order="asc", hide_same_date="true", date2_time_format="g:ia", no_events_msg="No events!"]
@@ -502,8 +491,8 @@ if(!$wplc_is_included) {
 		$tbl_name = get_option("wplc_tbl_name");
 		$event_order_lower = strtolower($event_order);
 		
-		if(($display_mode == "list" && empty($event_format)) ||
-			is_null(max_events) ||
+		if (($display_mode == "list" && empty($event_format)) ||
+			is_null($max_events) ||
 			($event_order_lower != "asc" && $event_order_lower != "desc"))
 		{
 			return array();
@@ -522,23 +511,23 @@ if(!$wplc_is_included) {
 		
 		// Check if the format contains the author variable to decide whether to do the join or not
 		$needuserjoin = false;
-		if(strpos($event_format, "%AUTHOR%") > -1) {
+		if (strpos($event_format, "%AUTHOR%") > -1) {
 			$sql .= ", u.display_name as event_author";
 			$needuserjoin = true;
 		}
 		
 		$sql .= " FROM $tbl_name e";
 		
-		if($needuserjoin) {
+		if ($needuserjoin) {
 			$sql .= " LEFT JOIN $wpdb->users u ON e.event_author = u.ID";
 		}
 		
-		if(!$show_past_events) {
+		if (!$show_past_events) {
 			$sql .= " WHERE e.event_end_time >= ".wplc_time();
 			$whered = true;
 		}
-		if($advance_days > -1) {
-			if($whered) {
+		if ($advance_days > -1) {
+			if ($whered) {
 				$sql .= " AND ";
 			}
 			else {
@@ -549,16 +538,15 @@ if(!$wplc_is_included) {
 			$sql .= "e.event_start_time < ".(wplc_time() + ($advance_days * 3600 * 24));
 		}
 		
-		if($event_order_lower == "asc") {
+		if ($event_order_lower == "asc") {
 			$order = "ASC";
-		}
-		else {
+		} else {
 			$order = "DESC";
 		}
 		
 		$sql .= " ORDER BY e.event_start_time ".$order.", e.event_end_time ".$order;
 		
-		if($max_events > -1)
+		if ($max_events > -1)
 			$sql .= " LIMIT ".$max_events;
 		return $wpdb->get_results($wpdb->escape($sql), ARRAY_A);
 	}

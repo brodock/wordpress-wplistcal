@@ -25,7 +25,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-if(wplc_is_wplc_page()) {
+if (wplc_is_wplc_page()) {
 	add_action( 'admin_head', 'wplc_editor_init' );
 	function wplc_editor_init() {
 		wp_admin_css('thickbox');
@@ -35,98 +35,102 @@ if(wplc_is_wplc_page()) {
 		wp_print_scripts('jquery');
 		wp_print_scripts('jquery-ui-core');
 		wp_print_scripts('jquery-ui-tabs');
-		if(function_exists('wp_tiny_mce')) wp_tiny_mce();
+		if (function_exists('wp_tiny_mce')) { wp_tiny_mce(); }
 	}
 }
 
+// Action Hooks
+add_action('admin_menu', 'wplc_add_admin_pages');
+add_action('right_now_table_end', 'wplc_activity_box');
+add_action('wp_ajax_wplc_delete_event', 'wplc_delete_event');
+add_action('admin_init', 'wplc_register_settings');
+add_action('plugins_loaded', 'wplc_widget_init');
+
+// Filter Hooks
+add_filter('favorite_actions', 'wplc_favorite_actions_filter');
+add_filter("plugin_action_links_{$wplc_plugin}", 'wplc_actlinks' );
+
 function wplc_show_event_form($event=array(), $message=null, $export=false) {
 	wplc_setup();
-	global $wplc_domain;
+	global $wplc_domain, $user_ID;
 	
 	wplc_upgrade_if_needed();
 	
 	$editing = count($event) != 0;
 	
-	$use_24hr_time = get_option("wplc_use_24hr_time");
-	if(!is_bool($use_24hr_time)) {
-		$use_24hr_time = $use_24hr_time == "true";
+	$use_24hr_time = get_option('wplc_use_24hr_time');
+	if (!is_bool($use_24hr_time)) {
+		$use_24hr_time = $use_24hr_time == 'true';
 	}
 
+    // Initialize default values
+    $to_blank = array('event_name', 'event_loc', 'event_link', 'event_desc');
+    foreach ($to_blank as $key) {
+        if (!isset($event[$key])) {
+            $event[$key] = '';
+        }
+    }
+    
 	// Prep event times
-	$d = $event['event_start_time'];
-	if(empty($d))
-		$d = wplc_time();
+	$d = empty($event['event_start_time']) ? wplc_time() : $event['event_start_time'];
+    
 	$date['event_start_month'] = date('n', $d);
 	$date['event_start_day'] = date('j', $d);
 	$date['event_start_year'] = date('Y', $d);
-	if($use_24hr_time)
-		$date['event_start_hour'] = date('G', $d);
-	else
-		$date['event_start_hour'] = date('g', $d);
+    $date['event_start_hour'] = ($use_24hr_time) ? date('G', $d) : date('g', $d);
 	$date['event_start_minute'] = date('i', $d);
-	if(!$use_24hr_time)
+	if (!$use_24hr_time) {
 		$date['event_start_ampm'] = date('A', $d);
+    }
 	
-	$d = $event['event_end_time'];
-	if(empty($d))
-		$d = wplc_time() + 3600;
+	$d = empty($event['event_end_time']) ? $d = wplc_time() + 3600 : $event['event_end_time'];
+    
 	$date['event_end_month'] = date('n', $d);
 	$date['event_end_day'] = date('j', $d);
 	$date['event_end_year'] = date('Y', $d);
-	if($use_24hr_time)
-		$date['event_end_hour'] = date('G', $d);
-	else
-		$date['event_end_hour'] = date('g', $d);
+    $date['event_end_hour'] = ($use_24hr_time) ? date('G', $d) : date('g', $d);
 	$date['event_end_minute'] = date('i', $d);
-	if(!$use_24hr_time)
+	if (!$use_24hr_time) {
 		$date['event_end_ampm'] = date('A', $d);
+    }
 		
 	get_currentuserinfo();
-	global $user_ID;
 	
-	if($editing) {
-		$time_format = "M j, Y @ ";
-		
-		if($use_24hr_time) {
-			$time_format .= "G:i";
-		}
-		else {
-			$time_format .= "g:ia";
-		}
-		
-		if($event['event_create_time'] == '0') {
+	if ($editing) {
+		$time_format = 'M j, Y @ ';
+		$time_format .= ($use_24hr_time) ? 'G:i' : 'g:ia';
+
+		if ($event['event_create_time'] == '0') {
 			$create_time = __("N/A", $wplc_domain);
-		}
-		else {
+		} else {
 			$create_time = date_i18n($time_format, $event['event_create_time']);
 		}
-		if($event['event_modified_time'] == '0') {
+		if ($event['event_modified_time'] == '0') {
 			$modified_time = __("N/A", $wplc_domain);
-		}
-		else {
+		} else {
 			$modified_time = date_i18n($time_format, $event['event_modified_time']);
 		}
-		
-		if($event['event_author'] == null) {
+
+		if ($event['event_author'] == null) {
 			$author = __("N/A", $wplc_domain);
-		}
-		else {
+		} else {
 			$author = $event['event_author'];
 		}
 	}
 	
-	if(!is_null($message)) {
+	if (!empty($message)) {
+		foreach ($message as $class => $msg)
 	?>
-		<div id="message" class="updated fade">
+		<div id="message" class="<?php echo $class; ?> fade">
 			<p>
-				<?php echo $message; ?>
+				<?php echo $msg ?>
 			</p>
 		</div>
 	<?php
 	}
 	?>
 	<div class="wrap">
-		<h2><?php echo $editing ? __("Edit Event", $wplc_domain) : __("Add New Event", $wplc_domain); ?></h2>
+		<h2><?php echo $editing ? __('Edit Event', $wplc_domain) : __('Add New Event', $wplc_domain); ?></h2>
 		<form name="event" id="event" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
 			<input type="hidden" id="user-id" name="user_ID" value="<?php echo (int) $user_ID ?>" />
 			<div id="poststuff">
@@ -139,36 +143,33 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 							<div class="inside">
 								<div class="submitbox">
 									<div id="minor-publishing">
-										<?php if($editing) { ?>
+										<?php if ($editing) { ?>
 											<div class="misc-pub-section">
-												<label class="wplc_baseline"><?php _e("Author:", $wplc_domain); ?></label>
+												<label class="wplc_baseline"><?php _e('Author:', $wplc_domain); ?></label>
 												<b><?php echo $author; ?></b>
 											</div>
 											<div class="misc-pub-section">
-												<label class="wplc_baseline"><?php _e("Published on:", $wplc_domain); ?></label>
+												<label class="wplc_baseline"><?php _e('Published on:', $wplc_domain); ?></label>
 												<b><?php echo $create_time; ?></b>
 											</div>
 											<?php if($create_time != $modified_time) { ?>
 												<div class="misc-pub-section">
-													<label class="wplc_baseline"><?php _e("Modified on:", $wplc_domain); ?></label>
+													<label class="wplc_baseline"><?php _e('Modified on:', $wplc_domain); ?></label>
 													<b><?php echo $modified_time; ?></b>
 												</div>
 											<?php } ?>
 											<div class="misc-pub-section misc-pub-section-last">
 												<?php
-												if($editing) {
 													$dellink = "admin.php?page=wplc-edit&op=delete&id=".$event['id'];
 													$dellink = (function_exists('wp_nonce_url')) ? wp_nonce_url($dellink, 'wplc-delete-event') : $dellink;
-													echo "<a class='submitdelete' href='".$dellink."' onclick=\"if(confirm('".__('You are about to delete this event \\\''.stripslashes($event['event_name']).'\\\'\n \\\'Cancel\\\' to stop, \\\'OK\\\' to delete.', $wplc_domain)."')) { return true; } return false;\">".__("Delete Event", $wplc_domain)."</a>";
+													echo '<a class="submitdelete" href="'.$dellink."\" onclick=\"if(confirm('".__('You are about to delete this event \\\''.$event['event_name'].'\\\'\n \\\'Cancel\\\' to stop, \\\'OK\\\' to delete.', $wplc_domain)."')) { return true; } return false;\">".__('Delete Event', $wplc_domain).'</a>';
 													?> | 
-													<a class='wplc_link' href="admin.php?page=wplc-edit&amp;op=editexport&amp;id=<?php echo $event['id']; ?>"><?php _e("Export", $wplc_domain); ?></a>
+													<a class="wplc_link" href="admin.php?page=wplc-edit&amp;op=editexport&amp;id=<?php echo $event['id']; ?>"><?php _e('Export', $wplc_domain); ?></a>
 													<?php
-												}
 												?>
 											</div>
-										<?php }
-										else {
-											echo "&nbsp;";
+										<?php } else {
+											echo '&nbsp;';
 										} ?>
 									</div>
 									<div id="major-publishing-actions">
@@ -188,7 +189,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 					<div id="post-body-content" class="has-sidebar-content">
 						<input type="hidden" name="action" value="submitted" />
 						<?php
-						if($editing) {
+						if ($editing) {
 						?>
 							<input type="hidden" name="id" value="<?php echo $event['id']; ?>" />
 						<?php
@@ -198,7 +199,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 							<h3 class="wplc_plaincursor"><?php _e('Title', $wplc_domain); ?></h3>
 							<div id="titlewrap-noformat" class="inside">
 								<label class="hidden" for="title-noformat">Title</label>
-								<input type="text" name="event_name" size="30" tabindex="1" value="<?php echo stripslashes(stripslashes($event['event_name'])); ?>" id="title-noformat" />
+								<input type="text" name="event_name" size="30" tabindex="1" value="<?php echo esc_attr($event['event_name']); ?>" id="title-noformat" />
 							</div>
 						</div>
 						
@@ -206,7 +207,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 							<h3 class="wplc_plaincursor"><?php _e('Location', $wplc_domain); ?></h3>
 							<div id="locwrap" class="inside">
 								<label class="hidden" for="location">Location</label>
-								<input type="text" name="event_loc" size="30" tabindex="2" value="<?php echo stripslashes(stripslashes($event['event_loc'])); ?>" id="location" />
+								<input type="text" name="event_loc" size="30" tabindex="2" value="<?php echo esc_attr($event['event_loc']); ?>" id="location" />
 							</div>
 						</div>
 					
@@ -214,7 +215,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 							<h3 class="wplc_plaincursor"><?php _e('Link', $wplc_domain); ?></h3>
 							<div id="linkwrap" class="inside">
 								<label class="hidden" for="link">Link</label>
-								<input type="text" name="event_link" size="30" tabindex="2" value="<?php echo stripslashes(stripslashes($event['event_link'])); ?>" id="link" />
+								<input type="text" name="event_link" size="30" tabindex="2" value="<?php echo esc_attr($event['event_link']); ?>" id="link" />
 							</div>
 						</div>
 
@@ -224,80 +225,59 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 								<div style="clear:both;float:none;">
 									<label class="wplc_date_label"><?php _e('Start:', $wplc_domain); ?></label>
 									<div class="wplc_date_body">
-										<?php
-											$s[$date['event_start_month']] = " selected='selected'";
-										?>
 										<select name="start-month" id="start-month" onchange="wplc_matchValue('start-month', 'end-month', true);" tabindex="3">
-											<option value="1"<?php echo $s['1']; ?>><?php _e('Jan', $wplc_domain); ?></option>
-											<option value="2"<?php echo $s['2']; ?>><?php _e('Feb', $wplc_domain); ?></option>
-											<option value="3"<?php echo $s['3']; ?>><?php _e('Mar', $wplc_domain); ?></option>
-											<option value="4"<?php echo $s['4']; ?>><?php _e('Apr', $wplc_domain); ?></option>
-											<option value="5"<?php echo $s['5']; ?>><?php _e('May', $wplc_domain); ?></option>
-											<option value="6"<?php echo $s['6']; ?>><?php _e('Jun', $wplc_domain); ?></option>
-											<option value="7"<?php echo $s['7']; ?>><?php _e('Jul', $wplc_domain); ?></option>
-											<option value="8"<?php echo $s['8']; ?>><?php _e('Aug', $wplc_domain); ?></option>
-											<option value="9"<?php echo $s['9']; ?>><?php _e('Sep', $wplc_domain); ?></option>
-											<option value="10"<?php echo $s['10']; ?>><?php _e('Oct', $wplc_domain); ?></option>
-											<option value="11"<?php echo $s['11']; ?>><?php _e('Nov', $wplc_domain); ?></option>
-											<option value="12"<?php echo $s['12']; ?>><?php _e('Dec', $wplc_domain); ?></option>
+                                            <?php
+                                            for ($i=1; $i <= 12; $i++) {
+                                                $month = date_i18n("M", mktime(0, 0, 0, $i, 1, 2000));
+                                                ?><option value="<?php echo $i; ?>"<?php if ($i == $date['event_start_month']) { echo " selected='selected'"; } ?>><?php echo $month; ?></option><?php
+                                            }
+                                            ?>
 										</select>
 										<input type="text" name="start-day" id="start-day" size="2" maxlength="2" value="<?php echo $date['event_start_day']; ?>" tabindex="4" onblur="wplc_matchValue('start-day', 'end-day', false);" />
 										<input type="text" name="start-year" id="start-year" size="4" maxlength="4" value="<?php echo $date['event_start_year']; ?>" tabindex="5" onblur="wplc_matchValue('start-year', 'end-year', false);" />
-										<span id="start-time-cont"<?php echo $event['event_allday']==1 ? " style='visibility:hidden;'" : ""; ?>>
+										<span id="start-time-cont"<?php echo (isset($event['event_allday']) && $event['event_allday'] == 1) ? " style='visibility:hidden;'" : ""; ?>>
 											@ <input type="text" name="start-hour" id="start-hour" size="2" maxlength="2" value="<?php echo $date['event_start_hour']; ?>" tabindex="6" onblur="wplc_matchValue('start-hour', 'end-hour', false);" />
 											: <input type="text" name="start-minute" id="start-minute" size="2" maxlength="2" value="<?php echo $date['event_start_minute']; ?>" tabindex="7" onblur="wplc_matchValue('start-minute', 'end-minute', false);" />
-											<?php
-												if(!$use_24hr_time) {
-													$s[$date['event_start_ampm']] = " selected='selected'";
-											?>
+                                            <?php if (!$use_24hr_time) : ?>
 											<select name="start-ampm" id="start-ampm" tabindex="8" onchange="wplc_matchValue('start-ampm', 'end-ampm', true);">
-												<option value="AM"<?php echo $s['AM']; ?>>AM</option>
-												<option value="PM"<?php echo $s['PM']; ?>>PM</option>
+                                                <?php
+                                                    $ampm = array('AM', 'PM');
+                                                    foreach ($ampm as $daytime) {
+                                                        ?><option value="<?php echo $daytime; ?>"<?php if ($daytime == $date['event_start_ampm']) { echo " selected='selected'"; } ?>><?php echo $daytime; ?></option><?php
+                                                    }
+                                                ?>
 											</select>
+                                            <?php endif; ?>
 										</span>
-										<?php
-											}
-										?>
 									</div>
 								</div>
 								<div style="padding-top:15px;clear:both;float:none;">
 									<label class="wplc_date_label"><?php _e('End:', $wplc_domain); ?></label>
 									<div class="wplc_date_body">
-										<?php
-											unset($s);
-											$s[$date['event_end_month']] = " selected='selected'";
-										?>
 										<select name="end-month" tabindex="9" id="end-month" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
-											<option value="1"<?php echo $s['1']; ?>><?php _e('Jan', $wplc_domain); ?></option>
-											<option value="2"<?php echo $s['2']; ?>><?php _e('Feb', $wplc_domain); ?></option>
-											<option value="3"<?php echo $s['3']; ?>><?php _e('Mar', $wplc_domain); ?></option>
-											<option value="4"<?php echo $s['4']; ?>><?php _e('Apr', $wplc_domain); ?></option>
-											<option value="5"<?php echo $s['5']; ?>><?php _e('May', $wplc_domain); ?></option>
-											<option value="6"<?php echo $s['6']; ?>><?php _e('Jun', $wplc_domain); ?></option>
-											<option value="7"<?php echo $s['7']; ?>><?php _e('Jul', $wplc_domain); ?></option>
-											<option value="8"<?php echo $s['8']; ?>><?php _e('Aug', $wplc_domain); ?></option>
-											<option value="9"<?php echo $s['9']; ?>><?php _e('Sep', $wplc_domain); ?></option>
-											<option value="10"<?php echo $s['10']; ?>><?php _e('Oct', $wplc_domain); ?></option>
-											<option value="11"<?php echo $s['11']; ?>><?php _e('Nov', $wplc_domain); ?></option>
-											<option value="12"<?php echo $s['12']; ?>><?php _e('Dec', $wplc_domain); ?></option>
+                                            <?php
+                                            for ($i=1; $i <= 12; $i++) {
+                                                $month = date_i18n("M", mktime(0, 0, 0, $i, 1, 2000));
+                                                ?><option value="<?php echo $i; ?>"<?php if ($i == $date['event_end_month']) { echo " selected='selected'"; } ?>><?php echo $month; ?></option><?php
+                                            }
+                                            ?>
 										</select>
 										<input type="text" name="end-day" id="end-day" size="2" maxlength="2" value="<?php echo $date['event_end_day']; ?>" tabindex="10" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
 										<input type="text" name="end-year" id="end-year" size="4" maxlength="4" value="<?php echo $date['event_end_year']; ?>" tabindex="11" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-										<span id="end-time-cont"<?php echo $event['event_allday']==1 ? " style='visibility:hidden;'" : ""; ?>>
+										<span id="end-time-cont"<?php echo (isset($event['event_allday']) && $event['event_allday'] == 1) ? " style='visibility:hidden;'" : ""; ?>>
 											@ <input type="text" name="end-hour" id="end-hour" size="2" maxlength="2" value="<?php echo $date['event_end_hour']; ?>" tabindex="12" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
 											: <input type="text" name="end-minute" id="end-minute" size="2" maxlength="2" value="<?php echo $date['event_end_minute']; ?>" tabindex="13" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;" />
-											<?php
-												if(!$use_24hr_time) {
-													$s[$date['event_end_ampm']] = " selected='selected'";
-											?>
+											<?php if (!$use_24hr_time) : ?>
 											<select name="end-ampm" id="end-ampm" tabindex="14" onfocus="editable = true;" onblur="editable = false;" onchange="fieldsDirty = editable ? true : fieldsDirty;">
-												<option value="AM"<?php echo $s['AM']; ?>>AM</option>
-												<option value="PM"<?php echo $s['PM']; ?>>PM</option>
+                                                <?php
+                                                    $ampm = array('AM', 'PM');
+                                                    foreach ($ampm as $daytime) {
+                                                        ?><option value="<?php echo $daytime; ?>"<?php if ($daytime == $date['event_end_ampm']) { echo " selected='selected'"; } ?>><?php echo $daytime; ?></option><?php
+                                                    }
+                                                ?>
 											</select>
+                                            <?php endif; ?>
 										</span>
-										<?php
-											}
-										?>
 									</div>
 								</div>
 								<div style="clear:both;">
@@ -308,7 +288,7 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 	
 						<div id="<?php echo user_can_richedit() ? 'postdivrich' : 'postdiv'; ?>" class="postarea">
 							<?php
-							the_editor(stripslashes(stripslashes($event['event_desc'])) /*content*/, "content" /*id*/, "end-ampm" /*prev_id*/, true /*media_buttons*/, 15 /*tab_index*/);
+							the_editor($event['event_desc'] /*content*/, "content" /*id*/, "end-ampm" /*prev_id*/, true /*media_buttons*/, 15 /*tab_index*/);
 							?>
 						</div>
 					</div>
@@ -323,73 +303,84 @@ function wplc_show_event_form($event=array(), $message=null, $export=false) {
 	</script>
 	<?php
 	
-	if($export) {
+	if ($export) {
 		wplc_export_events($event['id']);
 	}
 }
 
-function wplc_process_event($postvars) {
+function wplc_process_event() {
 	wplc_setup();
-	global $wplc_domain, $wpdb, $current_user;
-	get_currentuserinfo();
+	global $wplc_domain, $wpdb;
 
-	$gobacktoeditform = !empty($postvars['save']);
+	$current_user = wp_get_current_user();
+	$gobacktoeditform = !empty($_POST['save']);
 
-	$name = addslashes($postvars['event_name']);
-	$location = addslashes($postvars['event_loc']);
-	$link = addslashes($postvars['event_link']);
-	$description = addslashes($postvars['content']);
+    // Filtering submited data from user
+    $safevars = filter_input_array(INPUT_POST, array(
+        'id' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => 0)),
+        'event_name' => array('filter' => FILTER_SANITIZE_STRING),
+        'event_loc' => array('filter' => FILTER_SANITIZE_STRING),
+        'event_link' => array('filter' => FILTER_VALIDATE_URL, 'flags' => array(FILTER_FLAG_SCHEME_REQUIRED, FILTER_FLAG_HOST_REQUIRED)),
+        'event_allday' => array('filter' => FILTER_VALIDATE_BOOLEAN),
+        'content' => array('filter' => FILTER_UNSAFE_RAW),
+        'start-month' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => 1, 'max_range' => 12)),
+        'start-day' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => 1, 'max_range' => 31)),
+        'start-year' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => date('Y'))),
+        'start-hour' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => 0, 'max_range' => 23)),
+        'start-minute' => array('filter' => FILTER_SANITIZE_NUMBER_INT),
+        'start-ampm' => array('filter' => FILTER_SANITIZE_STRING),
+        'end-month' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => 1, 'max_range' => 12)),
+        'end-day' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => 1, 'max_range' => 31)),
+        'end-year' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => date('Y'))),
+        'end-hour' => array('filter' => FILTER_VALIDATE_INT, 'options' => array('min_range' => 0, 'max_range' => 23)),
+        'end-minute' => array('filter' => FILTER_SANITIZE_NUMBER_INT),
+        'end-ampm' => array('filter' => FILTER_SANITIZE_STRING)
+    ));
+
+	$name = $safevars['event_name'];
+	$location = $safevars['event_loc'];
+	$link = $safevars['event_link'];
+	$description = $safevars['content'];
 	
 	$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
 	
-	$allday = $postvars['event_allday'] == 1;
-	if($allday) {
-		$start_time = "0:00";
-		$end_time = "23:59";
+	$allday = $safevars['event_allday'] == 1;
+	if ($allday) {
+		$safevars['start-hour'] = 0;
+		$safevars['start-minute'] = 0;
+		$safevars['end-hour'] = 23;
+		$safevars['end-minute'] = 59;
 	}
-	else {
-		$start_time = addslashes($postvars['start-hour']).":".
-		addslashes($postvars['start-minute']).
-		$postvars['start-ampm'];
-		
-		$end_time = addslashes($postvars['end-hour']).":".
-		addslashes($postvars['end-minute']).
-		$postvars['end-ampm'];
-	}
-
-	// Get timestamps from date/time info
-	$startstr = addslashes($postvars['start-year'])."-".
-				$postvars['start-month']."-".
-				addslashes($postvars['start-day'])." ".
-				$start_time;
-	$endstr = addslashes($postvars['end-year'])."-".
-				$postvars['end-month']."-".
-				addslashes($postvars['end-day'])." ".
-				$end_time;
-	$start = strtotime($startstr);
-	$end = strtotime($endstr);
+	$start = mktime($safevars['start-hour'], $safevars['start-minute'], 0, $safevars['start-month'], $safevars['start-day'], $safevars['start-year']);
+	$end = mktime($safevars['end-hour'], $safevars['end-minute'], 0, $safevars['end-month'], $safevars['end-day'], $safevars['end-year']);
 	
 	$author = $current_user->ID;
 	$create_mod_time = wplc_time();
 
 	// Validation & Error Handling
-	// If name is empty, just refresh the post page
-	if(empty($name)) {
-		wplc_show_event_form();
+	// Name cannot be empty
+	if (empty($name)) {
+		wplc_show_event_form($safevars, array('error' => __('Title cannot be blank')));
 		return;
 	}
-	// If start time is invalid, use NOW
-	if($start === -1 || $start === false)
-		$start = wplc_time();
-	// If end time is invalid, use start
-	if($end === -1 || $end === false)
-		$end = $start;
+	// Start time needs to be valid
+	if ($start === -1 || $start === false) {
+		wplc_show_event_form($safevars, array('error' => __('Start time is invalid')));
+		return;
+	}
+	// End time needs to be valid
+	if ($end === -1 || $end === false) {
+		wplc_show_event_form($safevars, array('error' => __('End time is invalid')));
+		return;
+	}
 	// If end is before start time, set end to start
-	if($end < $start)
-		$end = $start;
+	if ($end < $start) {
+		wplc_show_event_form($safevars, array('error' => __('End time cannot be before start time')));
+		return;
+	}
 	
 	// Add data to db
-	if(empty($postvars['id'])) {
+	if (empty($safevars['id'])) {
 		$insert = "INSERT INTO ".$tbl_name.
 				  " (event_name, event_link, event_loc, event_desc, event_start_time, event_end_time, event_allday, event_author, event_create_time, event_modified_time) ".
 				  "VALUES('".$wpdb->escape($name)."',
@@ -403,8 +394,7 @@ function wplc_process_event($postvars) {
 						  '".$wpdb->escape($create_mod_time)."',
 						  '".$wpdb->escape($create_mod_time)."');";
 		$results = $wpdb->query($insert);
-	}
-	else {
+	} else {
 		$update = "UPDATE ".$tbl_name.
 			  	  " SET event_name='".$wpdb->escape($name)."',".
 				  "event_link='".$wpdb->escape($link)."',".
@@ -414,21 +404,21 @@ function wplc_process_event($postvars) {
 				  "event_end_time='".$wpdb->escape($end)."',".
 				  "event_allday=".$wpdb->escape($allday ? '1' : '0').",".
 				  "event_modified_time='".$wpdb->escape($create_mod_time)."' ".
-				  "WHERE id=".$wpdb->escape($postvars['id']);
+				  "WHERE id=".$wpdb->escape($safevars['id']);
 		$results = $wpdb->query($update);
 	}
 	
-	$msg = empty($postvars['id']) ? __("Event Added", $wplc_domain) : __("Event Updated", $wplc_domain);
+	$msg = empty($safevars['id']) ? array('updated' => __("Event Added", $wplc_domain)) : array('updated' => __("Event Updated", $wplc_domain));
 	
-	if($gobacktoeditform) {
-		$id = empty($postvars['id']) ? $wpdb->insert_id : $postvars['id'];
+	if ($gobacktoeditform) {
+		$id = empty($safevars['id']) ? $wpdb->insert_id : $safevars['id'];
 		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e LEFT JOIN ".$wpdb->users." u ON e.event_author = u.ID WHERE e.id=".$wpdb->escape($id);
-		$event = $wpdb->get_results($sql, ARRAY_A);
+		$event = $wpdb->get_row($sql, ARRAY_A);
+		$event = array_map('stripslashes', $event);
 
 		// Show edit form
-		wplc_show_event_form($event[0], $msg);
-	}
-	else {
+		wplc_show_event_form($event, $msg);
+	} else {
 		wplc_show_event_form(array(), $msg);
 	}
 }
@@ -437,30 +427,30 @@ function wplc_show_admin_write_page() {
 	wplc_setup();
 	global $wplc_domain;
 
-	$action = $_POST['action'];
-	if($action == "submitted") {
-		wplc_process_event($_POST);
-	}
-	else
+	$action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_STRING);
+	if ($action == "submitted") {
+		wplc_process_event();
+	} else {
 		wplc_show_event_form();
+    }
 }
 
-add_action('admin_menu', 'wplc_add_admin_pages');
 function wplc_add_admin_pages() {
 	wplc_setup();
 	global $wplc_domain, $wplc_dir, $wplc_plugin;
-	
-	add_object_page(__("Events", $wplc_domain), __("Events", $wplc_domain), 2, $wplc_plugin, "wplc_show_admin_write_page", $wplc_dir."/icon.gif");
-	
-	add_submenu_page($wplc_plugin, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), "edit_posts", $wplc_plugin, "wplc_show_admin_write_page");
-	add_submenu_page($wplc_plugin, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), "edit_posts", "wplc-edit", "wplc_show_admin_manage_page");
-	// Import not ready for release
+
+	add_menu_page(__("Events", $wplc_domain), __("Events", $wplc_domain), 'author', $wplc_domain, '', $wplc_dir."/icon.gif", 30);
+
+    add_submenu_page($wplc_domain, __("Add New Event", $wplc_domain), __("Add New", $wplc_domain), "add_posts", $wplc_domain, "wplc_show_admin_write_page");
+    add_submenu_page($wplc_domain, __("Edit Events", $wplc_domain), __("Edit", $wplc_domain), "edit_posts", 'wplc-edit', "wplc_show_admin_manage_page");
+
+    // Import not ready for release
 	//add_submenu_page($wplc_plugin, __("Import Events", $wplc_domain), __("Import", $wplc_domain), "import", "wplc-import", "wplc_show_import_page");
-	add_submenu_page($wplc_plugin, __("Event Operations", $wplc_domain), __("Operations", $wplc_domain), "read", "wplc-ops", "wplc_show_admin_operations_page");
+
+	add_submenu_page($wplc_domain, __("Event Operations", $wplc_domain), __("Operations", $wplc_domain), "import", "wplc-ops", "wplc_show_admin_operations_page");
 	add_options_page(__("WPListCal Settings", $wplc_domain), __("WPListCal", $wplc_domain), "manage_options", "wplc-options", "wplc_show_admin_options_page");
 }
 
-add_filter("favorite_actions", "wplc_favorite_actions_filter");
 function wplc_favorite_actions_filter($actions) {
 	global $wplc_plugin, $wplc_domain;
 	wplc_setup();
@@ -469,7 +459,6 @@ function wplc_favorite_actions_filter($actions) {
 	return $actions;
 }
 
-add_action("right_now_table_end", "wplc_activity_box");
 function wplc_activity_box() {
 	global $wpdb;
 	$tbl_name = get_option("wplc_tbl_name");
@@ -479,14 +468,13 @@ function wplc_activity_box() {
 	?>
 	<tr>
 		<td class="first b b-events"><a href="admin.php?page=wplc-edit"><?php echo $num; ?></a></td>
-		<td class="t events"><a href="admin.php?page=wplc-edit"><?php echo __ngettext( 'Event', 'Events', $num ); ?></a></td>
+		<td class="t events"><a href="admin.php?page=wplc-edit"><?php echo _n( 'Event', 'Events', $num ); ?></a></td>
 		<td class="b">&nbsp;</td>
 		<td class="t last">&nbsp;</td>
 	</tr>
 	<?php
 }
 
-add_filter("plugin_action_links_$wplc_plugin", 'wplc_actlinks' ); 
 function wplc_actlinks($links) { 
 	global $wplc_plugin;
 	// Add a link to this plugin's settings page
@@ -495,18 +483,17 @@ function wplc_actlinks($links) {
 	return $links; 
 }
 
-add_action("wp_ajax_wplc_delete_event", "wplc_delete_event");
 function wplc_delete_event($id=null) {
 	wplc_setup();
 	global $wplc_domain, $wpdb;
-	
-	if($id == null)
-		$id = $wpdb->escape($_POST['id']);
-		
-	$tbl_name = $wpdb->escape(get_option("wplc_tbl_name"));
-	
-	$sql = "DELETE FROM ".$tbl_name." WHERE id=".$id;
-	$wpdb->query($sql);
+
+	if (empty($id)) {
+        $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+	}
+
+	$tbl_name = get_option('wplc_tbl_name');
+	$wpdb->query($wpdb->prepare("DELETE FROM {$tbl_name} WHERE id=%d", $id));
+	die('0');
 }
 
 function wplc_show_admin_manage_page() {
@@ -514,76 +501,94 @@ function wplc_show_admin_manage_page() {
 	global $wplc_domain, $wpdb, $wplc_plugin;
 	
 	wplc_upgrade_if_needed();
-	
-	if($_POST['action'] == "delete") {
-		wplc_delete_event($_POST['id']);
-		return;
+
+    $action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_STRING);
+	$op = filter_input(INPUT_GET, 'op', FILTER_SANITIZE_STRING);
+    $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+    $wplc_pg = filter_input(INPUT_GET, 'wplc_pg', FILTER_SANITIZE_STRING);
+
+	switch ($action) {
+		case 'delete':
+			$id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
+			wplc_delete_event($id);
+			break;
 	}
-	
-	if(($_GET['op'] == 'edit' || $_GET['op'] == 'editexport') && isset($_GET['id'])) {
-		wplc_show_admin_edit_page($_GET['id'], $_GET['op'] == 'editexport');
-		return;
-	}
-	
-	if($_GET['op'] == 'delete') {
-		if(function_exists('wp_nonce_url')) {
-			check_admin_referer('wplc-delete-event');
-		}
-		
-		wplc_delete_event($_GET['id']);
-		
-		// Set message
-		$message = __("Event deleted", $wplc_domain);
+
+	switch ($op) {
+		case 'edit':
+		case 'editexport':
+			if (!empty($id)) {
+				wplc_show_admin_edit_page($id, $op == 'editexport');
+				return;
+			} else {
+				$message = array('error' => __('Event not defined'));
+			}
+			break;
+		case 'delete':
+			if(function_exists('wp_nonce_url')) {
+				check_admin_referer('wplc-delete-event');
+			}
+			wplc_delete_event($id);
+			// Set message
+			$message = array('updated' => __('Event deleted', $wplc_domain));
+			break;
+		case 'export':
+			if (!empty($id)) {
+				wplc_export_events($id);
+			}
+			break;
 	}
 	
 	// op == export on bottom of function
 
-	$itemsperpage = get_option("wplc_manage_items_per_page");
-	$page = $_GET['wplc_pg'];
-	if(isset($page)) {
+	$itemsperpage = get_option('wplc_manage_items_per_page');
+	$page = $wplc_pg;
+	if (isset($page)) {
 		$offset = $itemsperpage * ($page-1);
-	}
-	else {
+	} else {
 		$offset = 0;
 		$page = 1;
 	}
 	
-	$use_24hr_time = get_option("wplc_use_24hr_time");
-	if(!is_bool($use_24hr_time)) {
+	$use_24hr_time = get_option('wplc_use_24hr_time');
+	if (!is_bool($use_24hr_time)) {
 		$use_24hr_time = $use_24hr_time == "true";
 	}
 	
 	// Check how many events there are
-	$sql = "SELECT ID FROM ".$wpdb->escape(get_option("wplc_tbl_name"));
-	$wpdb->query($sql);
+    $tbl_name = get_option('wplc_tbl_name');
+	$wpdb->query("SELECT ID FROM ".$tbl_name);
 	$totalevents = $wpdb->num_rows;
-	
 
 	// Get events for this page
-	$sql = "SELECT id, event_name, event_loc, event_start_time, event_end_time, event_allday"
-		 ." FROM ".$wpdb->escape(get_option("wplc_tbl_name"))
-		 ." ORDER BY event_start_time DESC, event_end_time DESC"
-		 ." LIMIT ".$wpdb->escape($offset).", ".$wpdb->escape($itemsperpage);
-		$wpdb->show_errors();
+	$sql = $wpdb->prepare(
+       "SELECT id, event_name, event_loc, event_start_time, event_end_time, event_allday
+        FROM {$tbl_name}
+        ORDER BY event_start_time DESC, event_end_time DESC
+        LIMIT %d, %d;",
+        $offset, $itemsperpage);
+
+    $wpdb->show_errors();
 	$events = $wpdb->get_results($sql, ARRAY_A);
-	
-	if($use_24hr_time)
-		$dateformat = 'D, M j, Y @ G:i';
-	else
-		$dateformat = 'D, M j, Y @ g:ia';
-	
+    foreach ($events as &$event) {
+        $event =& array_map('stripslashes', $event);
+    }
+    
+	$dateformat = ($use_24hr_time) ? 'D, M j, Y @ G:i' : 'D, M j, Y @ g:ia';
 	$allday_format = "D, M j";
 	
 	$delmsg = __("You are about to delete the event \'%s\'. \\n\'OK\' to delete, \'Cancel\' to stop.", $wplc_domain);
 	
-	if(!is_null($message)) {
+	if (!empty($message)) {
+		foreach ($message as $class => $msg) {
 	?>
-		<div id="message" class="updated fade">
+		<div id="message" class="<?php echo $class; ?> fade">
 			<p>
-				<?php echo $message; ?>
+				<?php echo $msg; ?>
 			</p>
 		</div>
 	<?php
+		}
 	}
 	?>
 	
@@ -593,14 +598,14 @@ function wplc_show_admin_manage_page() {
 			<div class="tablenav-pages">
 				<span class="displaying-num"><?php printf(__('Displaying %d-%d of %d', $wplc_domain), $offset+1, $offset+count($events), $totalevents); ?></span>
 				<?php
-				if($offset + $itemsperpage < $totalevents) {
+				if ($offset + $itemsperpage < $totalevents) {
 					echo "<a href='admin.php?wplc_pg=".($page+1)."&amp;page=wplc-edit' class='prev page-numbers'>";
 					_e("&laquo; Previous Events", $wplc_domain);
 					echo "</a>";
 					$prevshown = true;
 				}
-				if($page > 1) {
-					if($prevshown)
+				if ($page > 1) {
+					if ($prevshown)
 						echo " | ";
 					echo "<a href='admin.php?wplc_pg=".($page-1)."&amp;page=wplc-edit' class='next page-numbers'>";
 					_e("Next Events &raquo;", $wplc_domain);
@@ -609,7 +614,7 @@ function wplc_show_admin_manage_page() {
 				?>
 			</div>
 			<div class="alignleft">
-				<a href="admin.php?page=<?php echo $wplc_plugin; ?>"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
+				<a href="admin.php?page=<?php echo $wplc_domain; ?>" class="button"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
 			</div>
 		</div>
 		<table class="widefat">
@@ -625,7 +630,7 @@ function wplc_show_admin_manage_page() {
 			<tbody>
 
 			<?php
-			for($i=0; $i<count($events); $i++) {
+			for ($i=0; $i<count($events); $i++) {
 				$class = $i % 2 == 0 ? " class='alternate'" : "";
 				$useformat = $events[$i]['event_allday'] == 1 ? $allday_format : $dateformat;
 				$start = date_i18n($useformat, $events[$i]['event_start_time']);
@@ -634,10 +639,10 @@ function wplc_show_admin_manage_page() {
 
 				<tr id="event-<?php echo $events[$i]['id']; ?>" <?php echo $class; ?>>
 					<th scope="row" style="text-align:center;" class="check-column"><?php echo $events[$i]['id']; ?></th>
-					<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="row-title"><?php echo stripslashes(stripslashes($events[$i]['event_name'])); ?></a>
-						<div class="row-actions"><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:;" onclick="wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="submitdelete"><?php _e("Delete", $wplc_domain); ?></a> | <a href="admin.php?page=wplc-edit&amp;op=export&amp;id=<?php echo $events[$i]['id']; ?>"><?php _e("Export", $wplc_domain); ?></a></div>
+					<td><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="row-title"><?php echo $events[$i]['event_name']; ?></a>
+						<div class="row-actions"><a href="admin.php?id=<?php echo $events[$i]['id']; ?>&amp;page=wplc-edit&amp;op=edit" class="edit"><?php _e("Edit", $wplc_domain); ?></a> | <a href="javascript:wplcDeleteEvent(<?php echo $events[$i]['id']; ?>, '<?php echo sprintf($delmsg, $events[$i]['event_name']); ?>');" class="submitdelete"><?php _e("Delete", $wplc_domain); ?></a> | <a href="admin.php?page=wplc-edit&amp;op=export&amp;id=<?php echo $events[$i]['id']; ?>"><?php _e("Export", $wplc_domain); ?></a></div>
 					</td>
-					<td><?php echo stripslashes(stripslashes($events[$i]['event_loc'])); ?></td>
+                    <td><?php echo ($events[$i]['event_loc']); ?></td>
 					<td><?php echo $start; ?></td>
 					<td><?php echo $end; ?></td>
 				</tr>
@@ -677,35 +682,29 @@ function wplc_show_admin_manage_page() {
 				?>
 			</div>
 			<div class="alignleft" style="margin-top:6px;">
-				<a href="admin.php?page=<?php echo $wplc_plugin; ?>"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
+				<a href="admin.php?page=<?php echo $wplc_domain; ?>" class="button"><?php _e('Add New Event &raquo;', $wplc_domain); ?></a>
 			</div>
 		</div>
 		<br class="clear" />
 	</div>
 	<?php
-	
-	if($_GET['op'] == "export") {
-		if(!empty($_GET['id'])) {
-			wplc_export_events($_GET['id']);
-		}
-	}
 }
 
 function wplc_show_admin_edit_page($id, $export=false) {
 	wplc_setup();
 	global $wplc_domain, $wpdb;
 
-	$action = $_POST['action'];
-	if($action == "submitted") {
-		wplc_process_event($_POST);
-	}
-	else {
+	$action = filter_input(INPUT_POST, 'action', FILTER_SANITIZE_STRING);
+	if ($action == "submitted") {
+		wplc_process_event();
+	} else {
 		// Lookup event data for $id
 		$sql = "SELECT e.*, u.display_name as event_author FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." e LEFT JOIN  ".$wpdb->users." u ON e.event_author = u.ID WHERE e.id=".$wpdb->escape($id);
-		$event = $wpdb->get_results($sql, ARRAY_A);
+		$event = $wpdb->get_row($sql, ARRAY_A);
+		$event = array_map('stripslashes', $event);
 
 		// Show edit form
-		wplc_show_event_form($event[0], null, $export);
+		wplc_show_event_form($event, null, $export);
 	}
 }
 
@@ -716,50 +715,40 @@ function wplc_show_import_page() {
 	wplc_setup();
 	global $wplc_domain;
 	
-	$msgerr = false;	
-	if(isset($_POST['submit'])) {
-		if($_FILES['wplc_import_file']['type'] == "text/calendar") {
-			$dir = get_option("wplc_upload_dir");
+	if (isset($_POST['submit'])) {
+		if ($_FILES['wplc_import_file']['type'] == 'text/calendar') {
+			$dir = get_option('wplc_upload_dir');
 
-			if(empty($dir) || empty($url)) {
+			if (empty($dir) || empty($url)) {
 				wplc_init_upload_dir_settings();
-				$dir = get_option("wplc_upload_dir");
+				$dir = get_option('wplc_upload_dir');
 			}
 			
 			$uploadfile = $dir.basename($_FILES['wplc_import_file']['name']);
-			if(move_uploaded_file($_FILES['wplc_import_file']['tmp_name'], $uploadfile)) {
-				if(wplc_import_events($uploadfile)) {
-					$msgerr = true;
-					$message = __("Events successfully imported", $wplc_domain);
-					$class = "updated";
+			if (move_uploaded_file($_FILES['wplc_import_file']['tmp_name'], $uploadfile)) {
+				if (wplc_import_events($uploadfile)) {
+					$message = array('updated' => __('Events successfully imported', $wplc_domain));
+				} else {
+					$message = array('error' => __('Error: iCalendar file was not parsable', $wplc_domain));
 				}
-				else {
-					$msgerr = true;
-					$message = __("Error: iCalendar file was not parsable", $wplc_domain);
-					$class = "error";
-				}
+			} else {
+				$message = array('error' => __('Error: Upload failed', $wplc_domain));
 			}
-			else {
-				$msgerr = true;
-				$message = __("Error: Upload failed", $wplc_domain);
-				$class = "error";
-			}
-		}
-		else {
-			$msgerr = true;
-			$message = __("Error: Invalid file type uploaded. Please upload an iCalendar file. Type: ".$_FILES['wplc_import_file']['type'], $wplc_domain);
-			$class = "error";
+		} else {
+			$message = array('error' => __('Error: Invalid file type uploaded. Please upload an iCalendar file. Type: '.$_FILES['wplc_import_file']['type'], $wplc_domain));
 		}
 	}
-	
-	if($msgerr) {
+
+	if (!empty($message)) {
+		foreach ($message as $class => $msg) {
 	?>
 	<div id="message" class="<?php echo $class; ?>">
 		<p>
-			<?php echo $message; ?>
+			<?php echo $msg; ?>
 		</p>
 	</div>
-	<?php	
+	<?php
+		}
 	}
 	
 	?>
@@ -788,55 +777,54 @@ function wplc_show_admin_operations_page() {
 	global $wplc_domain;
 	
 	$can_cleanup = current_user_can("delete_posts");
+    $operation = filter_input(INPUT_GET, 'op', FILTER_SANITIZE_STRING);
 	
-	if($_GET['op'] == "cleanup" && $can_cleanup) {
+	if ($operation == "cleanup" && $can_cleanup) {
 		$num = wplc_cleanup_events();
-		if($num > 0) {
-			if($num == 1)
-				$message = __("1 old event deleted.", $wplc_domain);
+		if ($num > 0) {
+			if ($num == 1)
+				$message = array('updated' => __('1 old event deleted.', $wplc_domain));
 			else
-				$message = sprintf(__('%d old events deleted.', $wplc_domain), $num);
-			$class = "updated";
+				$message = array('updated' => sprintf(__('%d old events deleted.', $wplc_domain), $num));
+		} elseif ($num == 0) {
+			$message = array('updated' => __("No old events to delete.", $wplc_domain));
+		} else {
+			$message = array('updated' => __("Error: Event cleanup failed.", $wplc_domain));
 		}
-		elseif($num == 0) {
-			$message = __("No old events to delete.", $wplc_domain);
-			$class = "updated";
-		}
-		else {
-			$message = __("Error: Event cleanup failed.", $wplc_domain);
-			$class = "error";
-		}
+
+		foreach ($message as $class => $msg) {
 		?>
 		<div id="message" class="<?php echo $class; ?>">
 			<p>
-				<?php echo $message; ?>
+				<?php echo $msg; ?>
 			</p>
 		</div>
 		<?php
+		}
 	}
 	?>
 	<div class="wrap">
-		<h2><?php _e("Export Events", $wplc_domain); ?></h2>
+		<h2><?php _e('Export Events', $wplc_domain); ?></h2>
 		<p>
 			<?php printf(__("WPListCal can save your events in the standard iCalendar format. Events are stored in the timezone that your blog is set to use. All events are exported at once, past and future. If you'd like to export a single event, go to the %smanage events%s page and click &quot;Export&quot; near the event you want to export.", $wplc_domain), "<a href='admin.php?page=wplc-edit'>", "</a>"); ?>
 		</p>
 		<h3><a href="admin.php?page=wplc-ops&amp;op=export"><?php _e("Export events &raquo;", $wplc_domain); ?></a></h3>
 		
 		<?php
-		if($can_cleanup) :
+		if ($can_cleanup) :
 		?>
-			<h2><?php _e("Cleanup Events", $wplc_domain); ?></h2>
+			<h2><?php _e('Cleanup Events', $wplc_domain); ?></h2>
 			<p>
-				<?php _e("Have a bunch of old events sitting around? Click below to delete all events that have ended already. Note that this operation CANNOT be undone.", $wplc_domain); ?>
+				<?php _e('Have a bunch of old events sitting around? Click below to delete all events that have ended already. Note that this operation CANNOT be undone.', $wplc_domain); ?>
 			</p>
-			<h3><a href="admin.php?page=wplc-ops&amp;op=cleanup" onclick="return confirm('<?php _e("Are you sure you want to delete all past events?", $wplc_domain); ?>');"><?php _e("Cleanup events &raquo;", $wplc_domain); ?></a></h3>
+			<h3><a href="admin.php?page=wplc-ops&amp;op=cleanup" onclick="return confirm('<?php _e('Are you sure you want to delete all past events?', $wplc_domain); ?>');"><?php _e('Cleanup events &raquo;', $wplc_domain); ?></a></h3>
 		<?php
 		endif;
 		?>
 	</div>
 	<?php
 	
-	if($_GET['op'] == "export") {
+	if ($operation == 'export') {
 		wplc_export_events();
 	}
 }
@@ -847,12 +835,11 @@ function wplc_cleanup_events() {
 	$sql = "DELETE FROM ".$wpdb->escape(get_option("wplc_tbl_name"))." WHERE event_end_time < ".wplc_time();
 	$result = $wpdb->query($sql);
 	
-	if($result === false)
+	if ($result === false)
 		return -1;
 	return $result;
 }
 
-add_action('admin_init', 'wplc_register_settings');
 function wplc_register_settings() {
     register_setting('wplc', 'wplc_display_mode');
 	register_setting('wplc', 'wplc_event_format');
@@ -875,22 +862,22 @@ function wplc_show_admin_options_page() {
 	global $wplc_domain;
 	
 	$use_24hr_time = get_option("wplc_use_24hr_time");
-	if(!is_bool($use_24hr_time)) {
+	if (!is_bool($use_24hr_time)) {
 		$use_24hr_time = $use_24hr_time == "true";
 	}
 	
 	$open_links_in_new_window = get_option("wplc_open_links_in_new_window");
-	if(!is_bool($open_links_in_new_window)) {
+	if (!is_bool($open_links_in_new_window)) {
 		$open_links_in_new_window = $open_links_in_new_window == "true";
 	}
 	
 	$hide_same_date = get_option("wplc_hide_same_date");
-	if(!is_bool($hide_same_date)) {
+	if (!is_bool($hide_same_date)) {
 		$hide_same_date = $hide_same_date == "true";
 	}
 	
 	$nofollow_links = get_option("wplc_nofollow_links");
-	if(!is_bool($nofollow_links)) {
+	if (!is_bool($nofollow_links)) {
 		$nofollow_links = $nofollow_links == "true";
 	}
 	?>
@@ -1050,7 +1037,7 @@ function wplc_widget_init() {
 		
 		$wplc_widget_title = get_option("wplc_widget_title");
 		
-		if($_POST['wplc_submit'] == "1") {
+		if(isset($_POST['wplc_submit'])) {
 			$wplc_widget_new_title = strip_tags(stripslashes($_POST['wplc_widget_title']));
 			if($wplc_widget_title != $wplc_widget_new_title) {
 				$wplc_widget_title = $wplc_widget_new_title;
@@ -1061,16 +1048,16 @@ function wplc_widget_init() {
 		$wplc_widget_title = htmlspecialchars($wplc_widget_title, ENT_QUOTES);
 		
 		?>
-		<div>
-			<label for="wplc_widget_title"><?php _e("Widget Title:", $wplc_domain); ?></label><input type="text" id="wplc_widget_title" name="wplc_widget_title" value="<?php echo $wplc_widget_title; ?>" />
-			<input type="hidden" name="wplc_submit" id="wplc_submit" value="1" />
-		</div>
+		<p>
+			<label for="wplc_widget_title"><?php _e('Title:', $wplc_domain); ?></label>
+			<input type="text" class="widefat" id="wplc_widget_title" name="wplc_widget_title" value="<?php echo $wplc_widget_title; ?>" />
+		</p>
+		<input type="hidden" name="wplc_submit" id="wplc_submit" value="1" />
 		<?php
 	}
 	
-	register_sidebar_widget("WPListCal", "wplc_widget");
-	register_widget_control("WPListCal", "wplc_widget_control");
+	wp_register_sidebar_widget('wplistcal', 'WPListCal', 'wplc_widget');
+	wp_register_widget_control('wplistcal', 'WPListCal', 'wplc_widget_control');
 }
 
-add_action("plugins_loaded", "wplc_widget_init");
 ?>

@@ -37,7 +37,7 @@ if(version_compare(phpversion(), '5.1.0') == 1 && function_exists("timezone_abbr
 				}
 			}
 		}	
-		date_default_timezone_set("ust");
+		date_default_timezone_set("UTC");
 		return false;
 	}
 	set_tz_by_offset(get_option("gmt_offset"));

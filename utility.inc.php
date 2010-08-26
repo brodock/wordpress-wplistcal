@@ -25,7 +25,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 function wplc_set_if_null(&$var, $option_id) {
-	if(is_null($var))
+	if (is_null($var))
 		$var = get_option($option_id);
 }
 
@@ -36,28 +36,27 @@ function wplc_br2nl($string)
 
 add_action('admin_print_scripts', 'wplc_js_admin_header');
 function wplc_js_admin_header() {
-	wp_print_scripts(array('sack'));
 	?>
 	<script type="text/javascript" charset="utf-8">
 	//<![CDATA[
 	function wplcDeleteEvent(id, msg) {
 		if(confirm(msg)) {
-			var mysack = new sack("<?php bloginfo( 'wpurl' ); ?>/wp-admin/admin-ajax.php" );
-			mysack.execute = 1;
-			mysack.method = 'POST';
-			mysack.setVar("action", "wplc_delete_event");
-			mysack.setVar("id", id);
-			mysack.encVar("cookie", document.cookie, false);
-			mysack.onError = function() { alert('AJAX error in deleting event'); };
-			mysack.onCompletion = function() { 
-				if(mysack.responseStatus[0] == 200) {
+
+			var data = {
+				action: 'wplc_delete_event',
+				id: id
+			};
+
+			jQuery.post(ajaxurl, data, function(response) {
+				if (response == '0') {
 					var row = document.getElementById('event-'+id);
 					if(row != null && row.parentNode != null)
 						row.parentNode.removeChild(row);
-				}	
-			}
-			mysack.runAJAX();
-			
+				} else {
+					alert('<?php _e('AJAX error in deleting event'); ?>');
+				}
+			});
+
 			return true;
 		}
 	}
@@ -159,15 +158,16 @@ function wplc_admin_css() {
 
 function wplc_is_wplc_page() {
 	global $wplc_plugin;
-	
-	switch($_GET['page']) {
+
+    $page = filter_input(INPUT_GET, 'page', FILTER_SANITIZE_STRING);
+	switch($page) {
 		case $wplc_plugin:
-		case "wplc-edit":
-		case "wplc-options":
-		case "wplc-import":
-		case "wplc-export":
-		case "wplc-delete-event":
-		case "wplc_cleanup":
+		case 'wplc-edit':
+		case 'wplc-options':
+		case 'wplc-import':
+		case 'wplc-export':
+		case 'wplc-delete-event':
+		case 'wplc_cleanup':
 			return true;
 		default:
 			return false;
